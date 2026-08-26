@@ -1,0 +1,8 @@
+@use "@joisse1101/ui-library/styles/_variables.scss" as *;
+
+:export {
+    colorStretch: $color-stretch;
+    colorSuccess: $color-success;
+    colorWarning: $color-warning;
+    colorDanger: $color-danger;
+}

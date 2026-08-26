@@ -1,0 +1,9 @@
+@use "@joisse1101/ui-library/styles/_variables.scss" as *;
+
+.card-control-panel {
+  background-color: $bg-surface;
+  border: 1px solid $border-subtle;
+  border-radius: $radius-lg;
+  padding: 1.5rem;
+  box-shadow: $shadow-md;
+}

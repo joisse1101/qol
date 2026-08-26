@@ -1,0 +1,213 @@
+@use "@joisse1101/ui-library/styles/_variables.scss" as *;
+
+
+
+// ==========================================================================
+// Responsive Output Flex Layout (Side-by-side on wide, stacked on small)
+// ==========================================================================
+.output-flex-wrapper {
+  #grid-container{
+    display: flex;
+    flex: 1;
+  }
+}
+
+// Global Utilities
+.display-block {
+  display: block !important;
+}
+
+// ==========================================================================
+// Output Container & Active Card Containers
+// ==========================================================================
+.card {
+  background-color: $bg-surface;
+  border: 1px solid $border-subtle;
+  border-radius: $radius-lg;
+  padding: $card-padding-md;
+  box-shadow: $shadow-md;
+
+  &.card-output-logs {
+    background-color: $bg-surface;
+    white-space: pre-line; // Preserve line breaks in logs
+    font-family: monospace;
+  }
+
+  &:empty {
+    display: none;
+  }
+}
+
+.grid-container-active,
+.table-container-active {
+  background-color: $bg-surface;
+  border: 1px solid $border-subtle;
+  border-radius: $radius-xl;
+  box-shadow: $shadow-sm;
+  overflow-x: auto;
+  padding: 0.75rem $card-padding-sm;
+  width: 100%;
+}
+
+// ==========================================================================
+// Dynamic Granny Square Grid & Cell Animations
+// ==========================================================================
+.granny-grid {
+  display: grid;
+  grid-template-columns: repeat(var(--grid-size, 1), 1fr);
+  grid-template-rows: repeat(var(--grid-size, 1), 1fr);
+  gap: 0.25rem;
+  width: 100%;
+
+  @media (min-width: 600px) {
+    gap: 0.5rem;
+  }
+
+  .grid-cell {
+    width: 100%;
+    aspect-ratio: 1 / 1;
+    border-radius: $radius-sm;
+    box-shadow: $shadow-sm;
+
+    background: var(--cell-bg, transparent);
+    background-color: var(--cell-bg-color, transparent);
+
+    transition: opacity $transition-speed ease-in-out, transform $transition-speed ease-in-out;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: $text-main;
+    text-shadow: $shadow-text;
+    font-size: $font-xs;
+
+    will-change: opacity, transform;
+
+    @media (min-width: 600px) {
+      font-size: $font-sm;
+    }
+
+    &:hover {
+      transform: scale($cell-hover-scale);
+      z-index: 10;
+    }
+
+    &.is-locked {
+      outline: 1px solid $brand-active;
+      outline-offset: 1px;
+
+      @media (min-width: 600px) {
+        outline-offset: 2px;
+      }
+    }
+  }
+}
+
+.granny-grid.has-highlight {
+  .grid-cell {
+    opacity: 0.2;
+  }
+
+  .grid-cell.is-highlighted {
+    opacity: 1;
+  }
+}
+
+/* Cascade Animation Tokens */
+@keyframes cascadeIn {
+  0% {
+    opacity: 0;
+    transform: scale(0.8);
+  }
+
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animated-cell {
+  animation: cascadeIn $animation-duration ease forwards;
+  animation-delay: var(--delay, 0s);
+  opacity: 0;
+}
+
+// ==========================================================================
+// Interactive Palette Component Layout
+// ==========================================================================
+.palette-container {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap; // Side-by-side swatches on mobile/small screens
+  gap: 0.1rem;
+  width: 100%;
+
+  @media (min-width: 1024px) {
+    flex-direction: column;
+    flex-wrap: nowrap;
+    gap: 0.5rem;
+    width: max-content;
+    max-width: 100%;
+  }
+
+  .palette-row {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+    padding: 0.1rem;
+    border-radius: $radius-md;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color $transition-speed ease-in-out, transform $transition-speed ease-in-out;
+
+    @media (min-width: 1024px) {
+      padding: 0.25rem 0.5rem;
+      gap: 0.75rem;
+    }
+
+    &:hover,
+    &.is-active {
+      background-color: $bg-surface-hover;
+      transform: scale(1.05);
+    }
+
+    .palette-swatch {
+      flex: 0 0 auto;
+      width: $swatch-size-lg;
+      height: $swatch-size-lg;
+      border-radius: $radius-sm;
+      border: 1px solid $border-color;
+      box-shadow: $shadow-sm;
+      background-color: var(--swatch-color, transparent);
+
+      @media (max-width: 1024px) {
+        width: $swatch-size-sm;
+        height: $swatch-size-sm;
+      }
+    }
+
+    // Hide text labels on small screens, reveal on desktop
+    .palette-label {
+      display: none;
+      font-family: monospace;
+      font-size: $font-base;
+      color: $text-main;
+
+      @media (min-width: 1024px) {
+        display: inline;
+      }
+    }
+  }
+}
+
+// ==========================================================================
+// Output Log Section
+// ==========================================================================
+.output-section {
+  font-weight: 600;
+  color: $text-muted;
+
+  >*+* {
+    margin-top: 0.75rem;
+  }
+}

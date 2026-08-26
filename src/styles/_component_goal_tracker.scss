@@ -1,0 +1,113 @@
+@use "@joisse1101/ui-library/styles/_variables.scss" as *;
+// ==========================================================================
+// Horizontal Goal Tracker Component
+// ==========================================================================
+
+.goal-tracker-title {
+  font-family: var(--font-family-display);
+  font-size: var(--font-xl);
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: var(--card-gap-md);
+}
+
+.horizontal-tracker {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  position: relative;
+  width: 100%;
+  padding: 1rem;
+
+  // Single horizontal line extending across all nodes
+  &::before {
+    content: "";
+    position: absolute;
+    top: calc((var(--btn-size-md-height) / 2) + 1rem); // Centers line with nodes
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: var(--border-color);
+    z-index: 1;
+    transform: translateY(-50%);
+  }
+
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.5rem;
+    position: relative;
+    z-index: 2;
+    background-color: var(--bg-surface); // Blocks background line from showing through node
+    padding: 0 0.5rem;
+    text-align: center;
+    cursor: default;
+
+    .node {
+      width: var(--btn-size-md-height);
+      height: var(--btn-size-md-height);
+      border-radius: var(--radius-full);
+      background-color: var(--input-bg);
+      border: 2px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-family: var(--font-family-mono);
+      font-size: var(--font-sm);
+      font-weight: 600;
+      color: var(--text-muted);
+      transition: all var(--transition-speed) ease-in-out;
+    }
+
+    .label-group {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0.125rem;
+
+      .step-title {
+        font-family: var(--font-family-body);
+        font-size: var(--font-base);
+        font-weight: 600;
+        color: var(--text-main);
+      }
+
+      .step-subtitle {
+        font-family: var(--font-family-mono);
+        font-size: var(--label-font-size);
+        color: var(--text-dim);
+      }
+    }
+
+    // --- State: Completed Step ---
+    &.completed {
+      .node {
+        background-color: var(--brand-accent);
+        border-color: var(--brand-border-strong);
+        color: var(--text-main);
+        box-shadow: var(--shadow-sm);
+      }
+    }
+
+    // --- State: Active Step ---
+    &.active {
+      .node {
+        background-color: var(--bg-surface-hover);
+        border-color: var(--border-focus);
+        color: var(--text-main);
+        box-shadow: var(--shadow-focus-ring), var(--shadow-glow-md);
+      }
+
+      .step-title {
+        color: var(--border-focus);
+      }
+    }
+
+    // Hover state micro-interaction
+    &:hover .node {
+      transform: scale(var(--cell-hover-scale));
+      border-color: var(--brand-hover);
+    }
+  }
+}
