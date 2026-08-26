@@ -7,8 +7,8 @@ import builtins
 # Fetch missing modules dynamically into Pyodide's filesystem
 async def load_dependencies():
     files = [
-        ("granny_square.py", "/assets/python/granny-square/granny_square.py"),
-        ("diagonal_grid.py", "/assets/python/granny-square/diagonal_grid.py"),
+        ("granny_square.py", "/qol/assets/python/granny-square/granny_square.py"),
+        ("diagonal_grid.py", "/qol/assets/python/granny-square/diagonal_grid.py"),
     ]
     for local_name, url in files:
         response = await pyfetch(url)

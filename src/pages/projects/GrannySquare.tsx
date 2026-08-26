@@ -70,7 +70,7 @@ export default function GrannySquare() {
 
         const pyScript = document.createElement('script');
         pyScript.type = 'py';
-        pyScript.src = '/assets/python/granny-square/main.py';
+        pyScript.src = '/qol/assets/python/granny-square/main.py';
 
         document.body.appendChild(pyScript);
 
