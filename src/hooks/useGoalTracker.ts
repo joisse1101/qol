@@ -1,9 +1,9 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
 import { getDatesInRange, getDaysBetween, getLocalDateKey, getMostRecentFirstDay, parseDate } from "@/utils/dates";
 import { getStatusColor, interpolateColors } from "@/utils/colours";
-import { getStorageItem } from "@/utils/storage";
 import { downloadJson, uploadJson } from "@/utils/json";
 import { showUploadDownloadToast } from "@/constants/toastConstants";
+import { useMiniTool } from "@/context/AppContext";
 
 // --- Types ---
 
@@ -35,35 +35,6 @@ type JsonState = GoalTrackerState & {
     progressOnDates: Record<string, string>;
 };
 
-// --- Storage Utilities ---
-
-const STORAGE_KEY_PREFIXES = {
-    TRACKER_STATE: 'goal_tracker_state',
-    PROGRESS_ON_DATES: 'goal_tracker_progress_on_dates',
-    CURRENT_WEEK: 'goal_tracker_current_week',
-} as const;
-
-function getStorageKeys(id: string) {
-    return {
-        TRACKER_STATE: `${STORAGE_KEY_PREFIXES.TRACKER_STATE}_${id}`,
-        PROGRESS_ON_DATES: `${STORAGE_KEY_PREFIXES.PROGRESS_ON_DATES}_${id}`,
-        CURRENT_WEEK: `${STORAGE_KEY_PREFIXES.CURRENT_WEEK}_${id}`,
-    };
-}
-
-export function getGoalTitleFromStorage(id: string): string {
-    const trackerStateKey = getStorageKeys(id).TRACKER_STATE;
-    const storedState = localStorage.getItem(trackerStateKey);
-    if (storedState) {
-        try {
-            const parsedState = JSON.parse(storedState);
-            return parsedState.goalTitle || 'Your Goal';
-        } catch {
-            return 'Your Goal';
-        }
-    }
-    return 'Your Goal';
-}
 
 function handleFileUpload(file: File,
     updateGoalTrackerState: (updates: Partial<GoalTrackerState>) => void,
@@ -97,14 +68,7 @@ function handleFileDownload(goalTrackerState: GoalTrackerState, currentWeek: num
     }
 }
 
-export function deleteGoalStorage(id: string) {
-    const STORAGE_KEYS = getStorageKeys(id);
-    localStorage.removeItem(STORAGE_KEYS.TRACKER_STATE);
-    localStorage.removeItem(STORAGE_KEYS.PROGRESS_ON_DATES);
-    localStorage.removeItem(STORAGE_KEYS.CURRENT_WEEK);
-}
-
-const defaultGoalTrackerState: GoalTrackerState = {
+export const defaultGoalTrackerState: GoalTrackerState = {
     goalTitle: 'Your Goal',
     startDate: new Date(Date.now()),
     endDate: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000),
@@ -144,54 +108,23 @@ function parseGoalStateFromJson(json: any): GoalTrackerState {
     };
 }
 
-function retrieveGoalTrackerState(id: string): GoalTrackerState {
-    const STORAGE_KEYS = getStorageKeys(id);
-    const storedState = getStorageItem(STORAGE_KEYS.TRACKER_STATE, defaultGoalTrackerState);
-
-    return parseGoalStateFromJson(storedState);
-}
-
 // --- Hooks ---
-
-export function useGoalTitle(id: string): string {
-    const [title, setTitle] = useState<string>(() => getGoalTitleFromStorage(id));
-
-    useEffect(() => {
-        const handleTitleUpdate = (e: CustomEvent<{ id: string; title: string }>) => {
-            if (e.detail?.id === id) {
-                setTitle(e.detail.title);
-            }
-        };
-
-        window.addEventListener('goal_title_changed', handleTitleUpdate as EventListener);
-        return () => {
-            window.removeEventListener('goal_title_changed', handleTitleUpdate as EventListener);
-        };
-    }, [id]);
-
-    return title;
-}
-
 export const useGoalTracker = (id: string) => {
-    const STORAGE_KEYS = useMemo(() => getStorageKeys(id), [id]);
+    const { toolData, setToolData } = useMiniTool('goalTracker', id);
 
     // --- State Initialization ---
-    const [goalTrackerState, setGoalTrackerState] = useState<GoalTrackerState>(() => retrieveGoalTrackerState(id));
-    const [progressOnDates, setProgressOnDates] = useState<Record<string, string>>(() => getStorageItem(STORAGE_KEYS.PROGRESS_ON_DATES, {}));
-    const [currWeek, setCurrWeek] = useState<number>(() => getStorageItem(STORAGE_KEYS.CURRENT_WEEK, 1));
+    const [goalTrackerState, setGoalTrackerState] = useState<GoalTrackerState>(parseGoalStateFromJson(toolData.trackerState));
+    const [progressOnDates, setProgressOnDates] = useState<Record<string, string>>(toolData.progressOnDates || {});
+    const [currWeek, setCurrWeek] = useState<number>(toolData.currentWeek || 1);
 
     // --- Persistence Side Effects ---
     useEffect(() => {
-        localStorage.setItem(STORAGE_KEYS.TRACKER_STATE, JSON.stringify(goalTrackerState));
-    }, [goalTrackerState, STORAGE_KEYS.TRACKER_STATE]);
-
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEYS.CURRENT_WEEK, JSON.stringify(currWeek));
-    }, [currWeek, STORAGE_KEYS.CURRENT_WEEK]);
-
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEYS.PROGRESS_ON_DATES, JSON.stringify(progressOnDates));
-    }, [progressOnDates, STORAGE_KEYS.PROGRESS_ON_DATES]);
+        setToolData({
+            trackerState: goalTrackerState,
+            currentWeek: currWeek,
+            progressOnDates: progressOnDates,
+        }, id);
+    }, [goalTrackerState, currWeek, progressOnDates]);
 
     // --- Date Computations ---
     const firstDayOfTracker = getMostRecentFirstDay(goalTrackerState.startDate, goalTrackerState.firstDayOfWeek);
