@@ -1,16 +1,13 @@
 import { Outlet } from 'react-router-dom';
 import { Header, Footer } from '@joisse1101/ui-library';
 import { useGitHubAuth } from '@/hooks/useGitHubAuth';
-import { toast } from 'sonner';
 export function MainLayout() {
     const { status, isLoading, login, logout } = useGitHubAuth();
 
     const handleAuthAction = () => {
         if (status === 'logged-in') {
             logout();
-            toast.success('Logged out of GitHub.');
         } else {
-            toast.info('Redirecting to GitHub for authentication...');
             login();
         }
     }

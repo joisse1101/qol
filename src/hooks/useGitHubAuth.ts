@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { AuthService } from '../services/authService';
+import { toast } from 'sonner';
 
 export const useGitHubAuth = () => {
     const [token, setToken] = useState<string | null>(AuthService.getStoredToken());
@@ -21,10 +22,12 @@ export const useGitHubAuth = () => {
                 .then((newToken) => {
                     setToken(newToken);
                     setStatus('logged-in');
+                    toast.success('Successfully logged in with GitHub!');
                 })
                 .catch((err) => {
                     console.error(err);
                     setStatus('error');
+                    toast.error('Failed to log in with GitHub. Please try again.');
                 })
                 .finally(() => {
                     setIsLoading(false);
@@ -32,12 +35,16 @@ export const useGitHubAuth = () => {
         }
     }, []);
 
-    const login = () => AuthService.initiateLogin();
+    const login = () => {
+        toast.info('Redirecting to GitHub for authentication...');
+        AuthService.initiateLogin()
+    };
 
     const logout = () => {
         AuthService.logout();
         setToken(null);
         setStatus('logged-out');
+        toast.success('Logged out of GitHub.');
     };
 
     return { token, status, isLoading, login, logout };
