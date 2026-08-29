@@ -4,6 +4,7 @@ import { getStatusColor, interpolateColors } from "@/utils/colours";
 import { downloadJson, uploadJson } from "@/utils/json";
 import { showUploadDownloadToast } from "@/constants/toastConstants";
 import { useMiniTool } from "@/context/AppContext";
+import type { GoalTrackerState } from "@/types/GoalTrackerState";
 
 // --- Types ---
 
@@ -17,17 +18,6 @@ export type GoalState = {
     color: string;
     state: GoalStatus;
     type: GoalType;
-};
-
-export type GoalTrackerState = {
-    goalTitle: string;
-    startDate: Date;
-    endDate: Date;
-    expectedProgressPerDay: number;
-    goalTargets: number[];
-    overloadDays: number[];
-    firstDayOfWeek: number;
-    units: string;
 };
 
 type JsonState = GoalTrackerState & {

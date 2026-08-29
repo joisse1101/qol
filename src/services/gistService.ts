@@ -1,5 +1,6 @@
 import { Octokit } from '@octokit/rest';
-
+import { AppStateSchema, type AppState } from '@/types/AppState';
+import { toast } from 'sonner';
 const FILE_NAME = 'qol_data.json';
 const GIST_DESCRIPTION = 'QoL App Data Gist';
 
@@ -37,7 +38,7 @@ export class GistSyncService {
      * Loads data from the Gist. If the Gist exists and contains the expected file, it returns the parsed JSON data; otherwise, it returns null.
      * @returns Promise<T | null> - The parsed data from the Gist if available, or null if not found.
      */
-    async loadData<T>(): Promise<T | null> {
+    async loadData(): Promise<AppState | null> {
         const gistId = await this.findGistId();
         if (!gistId) return null;
 
@@ -45,7 +46,17 @@ export class GistSyncService {
         const file = gist.files?.[FILE_NAME];
         if (!file || !file.content) return null;
 
-        return JSON.parse(file.content) as T;
+        try {
+            const rawJson = JSON.parse(file.content);
+            const appState = AppStateSchema.parse(rawJson);
+            toast.success('Data loaded successfully from GitHub Gist!');
+            return appState;
+        } catch (e) {
+            console.error('Error parsing Gist data:', e);
+            console.log('Raw Gist content:', file.content);
+            toast.error('Something went wrong while loading data from GitHub Gist.');
+            return null;
+        }
     }
 
     /**

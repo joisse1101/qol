@@ -30,6 +30,9 @@ export default function GoalTracker() {
         if (tabIds.length === 0) {
             handleAddTab();
         }
+        if (!tabIds.includes(activeTab)) {
+            setActiveTab(tabIds[0]);
+        }
     }, [tabIds]);
 
     function triggerDeleteModal(tabId: string) {

@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import { useCanSideScroll } from '@joisse1101/ui-library';
 import type { GoalState } from "@/hooks/useGoalTracker";
 import { ConfigureGoalModal } from "./ConfigureGoalModal";
-import type { GoalTrackerState } from '@/hooks/useGoalTracker';
+import type { GoalTrackerState } from "@/types/GoalTrackerState";
 
 export const GoalTimeline: React.FC<{
     goals: GoalState[],

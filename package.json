@@ -31,7 +31,8 @@
     "remark-frontmatter": "^5.0.0",
     "remark-mdx-frontmatter": "^5.2.0",
     "sonner": "^2.0.8",
-    "string-width": "^8.2.2"
+    "string-width": "^8.2.2",
+    "zod": "^4.5.2"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
