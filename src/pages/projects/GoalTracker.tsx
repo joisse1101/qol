@@ -1,35 +1,39 @@
 import { Tabs, type TabItem } from "@joisse1101/ui-library";
 import { useEffect, useState } from "react";
 import { TrackerTab } from "@/components/partials/goalTracker/TrackerTab";
-import { getStorageItem } from "@/utils/storage";
-import { useGoalTitle, deleteGoalStorage } from "@/hooks/useGoalTracker";
 import { generateUUID } from '@/utils/numbers';
 import { DeleteGoalModal } from "@/components/partials/goalTracker/DeleteGoalModal";
-
-const STORAGE_KEY = 'goal_tracker_tab_ids';
+import { useMiniTool } from "@/context/AppContext";
 
 export default function GoalTracker() {
-    const [tabIds, setTabIds] = useState<string[]>(() =>
-        getStorageItem(STORAGE_KEY, [generateUUID()]));
+    const { toolData, setToolData } = useMiniTool('goalTracker');
+    const tabIds = Object.keys(toolData || {});
     const [activeTab, setActiveTab] = useState<string>(tabIds[0]);
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
-    useEffect(() => {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(tabIds));
-    }, [tabIds]);
-
-
     const tabItems: TabItem[] = tabIds.map((id) => ({
         id: id,
-        label: <DynamicTabLabel id={id} />,
+        label: toolData[id]?.trackerState?.goalTitle || 'Your Goal',
         content: <TrackerTab id={id} />,
     }));
 
     function handleAddTab() {
         const newId = generateUUID();
-        setTabIds([...tabIds, newId]);
+        setToolData({
+            ...toolData,
+            [newId]: {},
+        });
         setActiveTab(newId);
     }
+
+    useEffect(() => {
+        if (tabIds.length === 0) {
+            handleAddTab();
+        }
+        if (!tabIds.includes(activeTab)) {
+            setActiveTab(tabIds[0]);
+        }
+    }, [tabIds]);
 
     function triggerDeleteModal(tabId: string) {
         setActiveTab(tabId);
@@ -41,11 +45,11 @@ export default function GoalTracker() {
             alert("You cannot delete the last remaining tab.");
             return;
         }
-        setTabIds(tabIds.filter(id => id !== tabId));
+        const newTabIds = tabIds.filter(id => id !== tabId);
+        setToolData(Object.fromEntries(newTabIds.map(id => [id, toolData[id]])));
         if (activeTab === tabId) {
-            setActiveTab(tabIds.filter(id => id !== tabId)[0]);
+            setActiveTab(newTabIds[0]);
         }
-        deleteGoalStorage(tabId);
     }
     return (
         <div className="app-wrapper">
@@ -66,9 +70,4 @@ export default function GoalTracker() {
             />
         </div>
     )
-};
-
-const DynamicTabLabel = ({ id }: { id: string }) => {
-    const title = useGoalTitle(id);
-    return <>{title}</>;
 };
