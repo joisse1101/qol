@@ -277,6 +277,7 @@ export const useGoalTracker = (id: string) => {
         targetOverloadProgress,
         updateGoalTitle,
         onUpload: onUpload,
-        onDownload: onDownload
+        onDownload: onDownload,
+        currentProgress
     };
 };

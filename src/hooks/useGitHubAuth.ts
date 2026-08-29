@@ -4,7 +4,7 @@ import { toast } from 'sonner';
 
 export const useGitHubAuth = () => {
     const [token, setToken] = useState<string | null>(AuthService.getStoredToken());
-    const [status, setStatus] = useState<'logged-in' | 'logged-out' | 'exchanging' | 'error' | ''>('');
+    const [status, setStatus] = useState<'logged-in' | 'logged-out' | 'exchanging' | 'error' | ''>(token ? 'logged-in' : 'logged-out');
     const [isLoading, setIsLoading] = useState<boolean>(false);
     const hasExchangedCode = useRef(false);
 

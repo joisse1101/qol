@@ -111,3 +111,13 @@
     }
   }
 }
+
+.timeline-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--card-gap-md);
+  font-family: var(--font-family-mono);
+  font-size: var(--label-font-size);
+  color: var(--text-dim);
+}
