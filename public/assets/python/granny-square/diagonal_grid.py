@@ -55,101 +55,73 @@ class DiagonalGrid:
     async def __calculate_primary_element_distribution_by_id(
         self,
     ) -> List[List[Union[int, float]]]:
-        """Computes the per-diagonal distribution matrix for each primary element ID.
+        """Computes an evenly distributed per-diagonal allocation matrix for each primary element ID.
 
-        Calculates the distribution values (counts or proportions) across every
-        grid diagonal for each primary element, indexed by the element's numerical ID.
-
-        Returns:
-            List[List[Union[int, float]]]: A 2D list where row `i` contains the distribution
-            values across all diagonals for the primary element with ID `i`
-            (i.e., `matrix[element_id][diagonal_idx]`).
+        Ensures splits on any diagonal are strictly quantized to quarters of that diagonal's capacity
+        (0.25 * capacity), preventing non-standard fractions like 1/3 (0.333) or arbitrary offsets.
         """
 
         if self.num_primary_elements == 0:
             return []
 
-        ### 1. Estimate threshold for each element
-        threshold = (self.grid_size * (self.grid_size + 1)) / self.num_primary_elements
-        max_iterations = 5  # Prevent infinite loops
-        iterations = 0
+        num_diagonals = 2 * self.grid_size - 1
 
-        while iterations < max_iterations:
-            print(f"Estimated threshold for each element: {threshold}")
-            iterations += 1
+        # Capacities of diagonals: [1, 2, ..., N, ..., 2, 1]
+        diag_capacities = [
+            min(i + 1, 2 * self.grid_size - (i + 1)) for i in range(num_diagonals)
+        ]
 
-            # 2. Calculate the distribution for each element index ID
-            distribution_by_id = []
+        total_cells = float(self.grid_size * self.grid_size)
+        target_per_element = total_cells / self.num_primary_elements
 
-            # Temporary buffer tracking row counts for the element currently being processed
-            current_element_counts = []
+        distribution_by_id: List[List[Union[int, float]]] = [
+            [] for _ in range(self.num_primary_elements)
+        ]
 
-            # Queue storing element totals/counts to be mirrored/reversed for the bottom half
-            element_history_queue = []
+        current_elem_idx = 0
+        remaining_elem_capacity = target_per_element
 
-            # Running total of squares/units processed so far
-            current_element_total = 0
+        for diag_idx, capacity in enumerate(diag_capacities):
+            diag_remaining = float(capacity)
+            # Minimum chunk size is 1/4th of THIS diagonal's total capacity
+            quarter_unit = capacity / 4.0
 
-            for squares_in_row in range(1, self.grid_size + 1):
-                # Special handling of final row for odd-numbered primary_elements
+            while diag_remaining > 1e-6:
+                if current_elem_idx >= self.num_primary_elements - 1:
+                    # Last element takes whatever remains to reach total balance
+                    distribution_by_id[-1].append(round(diag_remaining, 2))
+                    break
+
+                # Raw allocation needed
+                allocated = min(remaining_elem_capacity, diag_remaining)
+
+                # Snap allocation to the nearest quarter of this diagonal
+                num_quarters = round(allocated / quarter_unit)
+                allocated_quarter = num_quarters * quarter_unit
+
+                # Enforce bounds: must be at least 1 quarter unit (if space permits) and <= diag_remaining
+                if allocated_quarter < quarter_unit and diag_remaining >= quarter_unit:
+                    allocated_quarter = quarter_unit
+                allocated_quarter = min(allocated_quarter, diag_remaining)
+
+                # Clean up representation (use int if whole number)
+                val = (
+                    int(allocated_quarter)
+                    if allocated_quarter.is_integer()
+                    else round(allocated_quarter, 2)
+                )
+                distribution_by_id[current_elem_idx].append(val)
+
+                diag_remaining -= allocated_quarter
+                remaining_elem_capacity -= allocated_quarter
+
+                # Advance to next primary element if capacity target is reached
                 if (
-                    self.num_primary_elements % 2 == 1
-                    and squares_in_row == self.grid_size
+                    remaining_elem_capacity <= (quarter_unit / 2.0)
+                    and current_elem_idx < self.num_primary_elements - 1
                 ):
-                    if self.num_primary_elements == squares_in_row:
-                        if current_element_counts:
-                            element_history_queue.append(current_element_counts[::-1])
-                            distribution_by_id.append(current_element_counts)
-                        distribution_by_id.append([squares_in_row])
-                    else:
-                        current_element_counts.append(squares_in_row * 0.25)
-                        element_history_queue.append(current_element_counts[::-1])
-                        distribution_by_id.append(current_element_counts)
-                        distribution_by_id.append([squares_in_row * 0.5])
-
-                    current_element_counts = []
-                    current_element_total = 0
-
-                # Logic to determine how many squares to assign to the current element based on threshold
-                if current_element_total + squares_in_row == threshold:
-                    current_element_counts.append(squares_in_row)
-                    element_history_queue.append(current_element_counts[::-1])
-                    distribution_by_id.append(current_element_counts)
-                    current_element_counts = []
-                    current_element_total = 0
-                elif current_element_total + squares_in_row > threshold:
-                    half = squares_in_row / 2
-                    current_element_counts.append(half)
-                    element_history_queue.append(current_element_counts[::-1])
-                    distribution_by_id.append(current_element_counts)
-                    current_element_counts = [half]
-                    current_element_total = half
-                else:
-                    current_element_counts.append(squares_in_row)
-                    current_element_total += squares_in_row
-
-            # Reverse top half to mirror the bottom half of the grid
-            while element_history_queue:
-                distribution_by_id.append(element_history_queue.pop())
-
-            if len(distribution_by_id) <= self.num_primary_elements:
-                return distribution_by_id
-
-            # If total element rows exceed num_primary_elements, adjust threshold and retry
-            print(
-                f"Threshold of {threshold} exceeded. Adjusting threshold and recalculating..."
-            )
-            threshold += 0.5
-            await asyncio.sleep(0)
-
-        if len(distribution_by_id) != self.num_primary_elements:
-            print(
-                f"❌ Unable to distribute {self.num_primary_elements} primary elements "
-            )
-            raise ValueError(
-                f"Unable to distribute {self.num_primary_elements} primary elements "
-                f"evenly on a {self.grid_size}x{self.grid_size} grid."
-            )
+                    current_elem_idx += 1
+                    remaining_elem_capacity += target_per_element
 
         print("✅ Successfully calculated primary element distribution by ID.")
         return distribution_by_id
@@ -168,13 +140,12 @@ class DiagonalGrid:
 
         primary_elements_on_diagonals = []
         diagonal_index = 1
-        primary_elements_on_curr_diagonal = []
         curr_squares_on_diagonal = 0.0
+        curr_diagonal_chunks = []
 
         distribution_by_id = await self.__calculate_primary_element_distribution_by_id()
 
         for element_id, square_counts in enumerate(distribution_by_id):
-            # Determine which representation to store (value vs ID)
             element_val = element_id
 
             for square_count in square_counts:
@@ -182,15 +153,44 @@ class DiagonalGrid:
                     diagonal_index, 2 * self.grid_size - diagonal_index
                 )
 
-                primary_elements_on_curr_diagonal.append(element_val)
+                curr_diagonal_chunks.append((element_val, square_count))
                 curr_squares_on_diagonal += square_count
 
-                # Using math.isclose or rounding to handle minor float precision drift (e.g. 1.5 + 1.5 == 3.0)
-                if round(curr_squares_on_diagonal, 5) == total_squares_on_diagonal:
-                    primary_elements_on_diagonals.append(
-                        primary_elements_on_curr_diagonal
-                    )
-                    primary_elements_on_curr_diagonal = []
+                # When the diagonal is complete
+                if math.isclose(
+                    curr_squares_on_diagonal, total_squares_on_diagonal, abs_tol=1e-5
+                ):
+
+                    # Case 1: Single element populates the entire diagonal
+                    if len(curr_diagonal_chunks) == 1:
+                        val = curr_diagonal_chunks[0][0]
+                        primary_elements_on_diagonals.append([val])
+
+                    # Case 2: Multiple elements share the diagonal
+                    else:
+                        # Target output length for N chunks is N + 1 elements
+                        # Total transition steps = len(curr_diagonal_chunks)
+                        unit_step = total_squares_on_diagonal / len(
+                            curr_diagonal_chunks
+                        )
+
+                        # Seed with the first element's base value
+                        result = [curr_diagonal_chunks[0][0]]
+
+                        for val, sc in curr_diagonal_chunks:
+                            # Allocate how many elements this square_count represents
+                            repeats = max(1, round(sc / unit_step))
+
+                            # For the first chunk, we already added 1 element above
+                            if result == [val]:
+                                result.extend([val] * (repeats - 1))
+                            else:
+                                result.extend([val] * repeats)
+
+                        primary_elements_on_diagonals.append(result)
+
+                    # Reset state for next diagonal
+                    curr_diagonal_chunks = []
                     curr_squares_on_diagonal = 0.0
                     diagonal_index += 1
 
