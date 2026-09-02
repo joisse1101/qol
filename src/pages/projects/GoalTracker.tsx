@@ -6,7 +6,7 @@ import { DeleteGoalModal } from "@/components/partials/goalTracker/DeleteGoalMod
 import { useMiniTool, useMiniToolInstanceIds } from "@/hooks/useMiniTool";
 
 export default function GoalTracker() {
-    const { instanceIds, createInstance, deleteInstance, isLoading } = useMiniToolInstanceIds('goalTracker');
+    const { instanceIds, createInstance, createDefaultInstance, deleteInstance, isLoading } = useMiniToolInstanceIds('goalTracker');
     const [activeTab, setActiveTab] = useState<string>('');
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
@@ -17,7 +17,7 @@ export default function GoalTracker() {
         if (instanceIds.length === 0) {
             // Seeding default tab if none exist
             const newId = generateUUID();
-            createInstance(newId, {});
+            createDefaultInstance(newId, {});
             setActiveTab(newId);
         } else if (!activeTab || !instanceIds.includes(activeTab)) {
             setActiveTab(instanceIds[0]);

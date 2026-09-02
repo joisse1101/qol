@@ -1,7 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import { z } from 'zod';
 import { ToolInstanceSchema } from '@/db/db';
-import { toast } from 'sonner';
 
 const FILE_NAME = 'qol_data.json';
 const GIST_DESCRIPTION = 'QoL App Data Gist';
@@ -59,12 +58,10 @@ export class GistSyncService {
 
             // Validates against flat Dexie payload schema
             const validatedPayload = FlatGistPayloadSchema.parse(rawJson);
-            toast.success('Data loaded successfully from GitHub Gist!');
             return validatedPayload;
         } catch (e) {
             console.error('Error parsing Gist data:', e);
             console.log('Raw Gist content:', file.content);
-            toast.error('Failed to parse data from GitHub Gist.');
             return null;
         }
     }
