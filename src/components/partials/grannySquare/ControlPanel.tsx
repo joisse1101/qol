@@ -1,9 +1,9 @@
 import { ColourPalettePicker } from "@joisse1101/ui-library";
-import { UPLOAD_INPUT_TOOLTIP } from "@/constants/grannySquareTooltips";
+import { DOWNLOAD_INPUT_TOOLTIP, UPLOAD_INPUT_TOOLTIP } from "@/constants/grannySquareTooltips";
 import { showUploadDownloadToast } from "@/constants/toastConstants";
 import { useMediaQuery } from "@joisse1101/ui-library";
 import type { GrannyGridState } from "@/hooks/useGrannySquare";
-import { parseGridCSV } from "@/utils/csv";
+import { downloadGridCSV, parseGridCSV } from "@/utils/csv";
 import { useRef, useState, type ChangeEvent } from "react";
 
 export interface ControlPanelProps {
@@ -158,6 +158,7 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                             gridSize={parseInt(gridSize)}
                             maxInput={numPatterns ? parseInt(numPatterns) : 0}
                             setActiveTab={setActiveTab}
+                            filledCells={filledCells}
                             setFilledCells={setFilledCells}
                         />
                         <button id="submitBtn" className="btn btn-primary" type="button" disabled={isGenerating} onClick={handleGenerate}>
@@ -174,8 +175,9 @@ const DownloadAndUploadButtons: React.FC<{
     gridSize: number;
     maxInput: number;
     setActiveTab: (tab: string) => void;
+    filledCells: Record<string, string>;
     setFilledCells: (filledCells: Record<string, string>) => void;
-}> = ({ gridSize, maxInput, setActiveTab, setFilledCells }) => {
+}> = ({ gridSize, maxInput, setActiveTab, filledCells, setFilledCells }) => {
     const fileInputRef = useRef<HTMLInputElement>(null);
 
     const onUpload = (event: ChangeEvent<HTMLInputElement>) => {
@@ -241,6 +243,34 @@ const DownloadAndUploadButtons: React.FC<{
         fileInputRef.current?.click();
     };
 
+    const downloadGridAsCSV = () => {
+        // Guard against missing or zero dimensions
+        if (!gridSize || typeof gridSize !== 'number' || gridSize <= 0) {
+            console.error('Cannot download CSV: Invalid grid size.');
+            showUploadDownloadToast('download', false);
+            return;
+        }
+
+        const filename = 'grid_data.csv';
+
+        // Construct raw 2D array of strings - downloadGridCSV will handle escaping & safety
+        const csvData = Array.from({ length: gridSize }, (_, rowIdx) =>
+            Array.from({ length: gridSize }, (_, colIdx) => {
+                const cellKey = `${rowIdx}-${colIdx}`;
+                return filledCells?.[cellKey] ?? '';
+            })
+        );
+
+        try {
+            downloadGridCSV(csvData, filename);
+            showUploadDownloadToast('download', true);
+        } catch (error) {
+            console.error('Error downloading CSV:', error);
+            showUploadDownloadToast('download', false);
+        }
+    };
+
+    const isGridEmpty = Object.keys(filledCells).length === 0;
     return (
         <div className="btn-wrapper">
             <input
@@ -253,6 +283,11 @@ const DownloadAndUploadButtons: React.FC<{
             <button className="btn btn-secondary" type="button" onClick={handleUploadButtonClick} title={UPLOAD_INPUT_TOOLTIP}>
                 {'Upload Grid'}
             </button>
+            {!isGridEmpty &&
+                <button className='btn btn-ghost' onClick={downloadGridAsCSV} title={DOWNLOAD_INPUT_TOOLTIP} disabled={isGridEmpty}>
+                    Download Grid
+                </button>
+            }
         </div>
     )
 

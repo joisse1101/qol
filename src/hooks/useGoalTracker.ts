@@ -1,9 +1,7 @@
-import { useEffect, useState, useMemo, useCallback } from "react";
+import { useEffect, useMemo, useCallback } from "react";
 import { getDatesInRange, getDaysBetween, getLocalDateKey, getMostRecentFirstDay, parseDate } from "@/utils/dates";
 import { getStatusColor, interpolateColors } from "@/utils/colours";
-import { downloadJson, uploadJson } from "@/utils/json";
-import { showUploadDownloadToast } from "@/constants/toastConstants";
-import { useMiniTool } from "@/context/AppContext";
+import { useMiniTool } from "@/hooks/useMiniTool";
 import type { GoalTrackerState } from "@/types/GoalTrackerState";
 
 // --- Types ---
@@ -19,44 +17,6 @@ export type GoalState = {
     state: GoalStatus;
     type: GoalType;
 };
-
-type JsonState = GoalTrackerState & {
-    currentWeek: number;
-    progressOnDates: Record<string, string>;
-};
-
-
-function handleFileUpload(file: File,
-    updateGoalTrackerState: (updates: Partial<GoalTrackerState>) => void,
-    setCurrWeek: (week: number) => void,
-    setProgressOnDates: (progress: Record<string, string>) => void) {
-    const data = uploadJson<JsonState>(file);
-    data.then((parsedData) => {
-        updateGoalTrackerState(parseGoalStateFromJson(parsedData));
-        const nextWeek = Number(parsedData.currentWeek);
-        setCurrWeek(Number.isFinite(nextWeek) ? nextWeek : 1);
-        setProgressOnDates(parsedData.progressOnDates ?? {});
-        showUploadDownloadToast('upload', true);
-    }).catch((error) => {
-        console.error('Failed to upload goal tracker data:', error);
-        showUploadDownloadToast('upload', false);
-    });
-}
-
-function handleFileDownload(goalTrackerState: GoalTrackerState, currentWeek: number, progressOnDates: Record<string, string>) {
-    try {
-        const downloadState: JsonState = {
-            ...goalTrackerState,
-            currentWeek,
-            progressOnDates,
-        };
-        downloadJson(downloadState, `${goalTrackerState.goalTitle.replace(/\s+/g, '_')}_goal_tracker.json`);
-        showUploadDownloadToast('download', true);
-    } catch (error: unknown) {
-        console.error('Failed to download goal tracker data:', error);
-        showUploadDownloadToast('download', false);
-    }
-}
 
 export const defaultGoalTrackerState: GoalTrackerState = {
     goalTitle: 'Your Goal',
@@ -100,21 +60,25 @@ function parseGoalStateFromJson(json: any): GoalTrackerState {
 
 // --- Hooks ---
 export const useGoalTracker = (id: string) => {
-    const { toolData, setToolData } = useMiniTool('goalTracker', id);
+    const { toolData, setToolData, isLoading } = useMiniTool('goalTracker', id);
 
-    // --- State Initialization ---
-    const [goalTrackerState, setGoalTrackerState] = useState<GoalTrackerState>(parseGoalStateFromJson(toolData.trackerState));
-    const [progressOnDates, setProgressOnDates] = useState<Record<string, string>>(toolData.progressOnDates || {});
-    const [currWeek, setCurrWeek] = useState<number>(toolData.currentWeek || 1);
+    const goalTrackerState: GoalTrackerState = parseGoalStateFromJson(toolData.trackerState);
+    const progressOnDates: Record<string, string> = toolData.progressOnDates || {};
+    const currWeek: number = toolData.currentWeek || 1;
 
-    // --- Persistence Side Effects ---
-    useEffect(() => {
-        setToolData({
-            trackerState: goalTrackerState,
-            currentWeek: currWeek,
-            progressOnDates: progressOnDates,
-        }, id);
-    }, [goalTrackerState, currWeek, progressOnDates]);
+    // Fixed: Included toolData and setToolData in dependencies
+    const updateGoalTracker = useCallback(async (partialData: Partial<{
+        trackerState: GoalTrackerState;
+        progressOnDates: Record<string, string>;
+        currentWeek: number;
+    }>) => {
+        const updatedData = {
+            ...toolData,
+            ...partialData,
+        };
+
+        await setToolData(updatedData);
+    }, [toolData, setToolData]);
 
     // --- Date Computations ---
     const firstDayOfTracker = getMostRecentFirstDay(goalTrackerState.startDate, goalTrackerState.firstDayOfWeek);
@@ -122,11 +86,16 @@ export const useGoalTracker = (id: string) => {
     const daysInTracker = getDaysBetween(goalTrackerState.startDate, goalTrackerState.endDate) + 1;
     const weeksInTracker = Math.max(1, Math.ceil((getDaysBetween(firstDayOfTracker, goalTrackerState.endDate) + 1) / 7));
 
-    // Ensure currWeek remains strictly bound to allowable ranges
+    // Fixed: Guarded with `isLoading` to prevent wiping IndexedDB before initial load completes
     useEffect(() => {
-        if (currWeek > weeksInTracker) setCurrWeek(weeksInTracker);
-        if (currWeek < 1) setCurrWeek(1);
-    }, [weeksInTracker, currWeek]);
+        if (isLoading) return;
+
+        if (currWeek > weeksInTracker) {
+            updateGoalTracker({ currentWeek: weeksInTracker });
+        } else if (currWeek < 1) {
+            updateGoalTracker({ currentWeek: 1 });
+        }
+    }, [weeksInTracker, currWeek, isLoading, updateGoalTracker]);
 
     const currWeekState = useMemo(() => {
         const startMs = firstDayOfTracker.getTime() + (currWeek - 1) * 7 * 24 * 60 * 60 * 1000;
@@ -209,47 +178,41 @@ export const useGoalTracker = (id: string) => {
     }, [goalTrackerState.goalTargets, goalTrackerState.expectedProgressPerDay, goalTrackerState.units, daysInTracker, currentProgress]);
 
     // --- State Updaters ---
+    // Fixed: Added currWeek and updateGoalTracker to dependencies
     const incrementWeek = useCallback((increment: number) => {
-        setCurrWeek((prev) => {
-            const nextWeek = prev + increment;
-            if (nextWeek < 1 || nextWeek > weeksInTracker) return prev;
-            return nextWeek;
-        });
-    }, [weeksInTracker]);
+        const nextWeek = currWeek + increment;
 
+        updateGoalTracker({
+            currentWeek: nextWeek < 1 ? 1 : nextWeek > weeksInTracker ? weeksInTracker : nextWeek,
+        });
+    }, [currWeek, weeksInTracker, updateGoalTracker]);
+
+    // Fixed: Added progressOnDates and updateGoalTracker to dependencies
     const setProgressForDate = useCallback((date: Date, progress: string) => {
         const dateKey = getLocalDateKey(date);
-        setProgressOnDates((prev) => {
-            const updated = { ...prev };
-            if (progress === '') {
-                delete updated[dateKey];
-            } else {
-                updated[dateKey] = progress;
-            }
-            return updated;
-        });
-    }, []);
+        const updated = { ...progressOnDates };
+        if (progress === '') {
+            delete updated[dateKey];
+        } else {
+            updated[dateKey] = progress;
+        }
+        updateGoalTracker({ progressOnDates: updated });
+    }, [progressOnDates, updateGoalTracker]);
 
+    // Fixed: Added goalTrackerState and updateGoalTracker to dependencies
     const updateGoalTitle = useCallback((title: string) => {
         const newTitle = title || 'Your Goal';
-        setGoalTrackerState((prev) => ({ ...prev, goalTitle: newTitle }));
+        updateGoalTracker({ trackerState: { ...goalTrackerState, goalTitle: newTitle } });
         window.dispatchEvent(
             new CustomEvent('goal_title_changed', {
                 detail: { id, title: newTitle },
             })
         );
-    }, [id]);
+    }, [id, goalTrackerState, updateGoalTracker]);
 
+    // Fixed: Added goalTrackerState and updateGoalTracker to dependencies
     const updateGoalTrackerState = useCallback((updates: Partial<GoalTrackerState>) => {
-        setGoalTrackerState((prev) => {
-            const nextState = { ...prev, ...updates };
-
-            if (updates.goalTargets) {
-                nextState.goalTargets = [...updates.goalTargets].sort((a, b) => a - b);
-            }
-            return nextState;
-        });
-
+        updateGoalTracker({ trackerState: { ...goalTrackerState, ...updates } });
         if (updates.goalTitle !== undefined) {
             window.dispatchEvent(
                 new CustomEvent('goal_title_changed', {
@@ -257,11 +220,7 @@ export const useGoalTracker = (id: string) => {
                 })
             );
         }
-    }, [id]);
-
-    // -- Upload and Download Functions ---
-    const onUpload = (file: File) => handleFileUpload(file, updateGoalTrackerState, setCurrWeek, setProgressOnDates);
-    const onDownload = () => handleFileDownload(goalTrackerState, currWeek, progressOnDates);
+    }, [id, goalTrackerState, updateGoalTracker]);
 
     return {
         currWeekState,
@@ -276,8 +235,7 @@ export const useGoalTracker = (id: string) => {
         overloadDatesLeft,
         targetOverloadProgress,
         updateGoalTitle,
-        onUpload: onUpload,
-        onDownload: onDownload,
-        currentProgress
+        currentProgress,
+        isLoading,
     };
 };

@@ -2,9 +2,14 @@ import { Outlet } from 'react-router-dom';
 import { Header, Footer } from '@joisse1101/ui-library';
 import { useGitHubAuth } from '@/hooks/useGitHubAuth';
 import { useGistSync } from '@/hooks/useGistSync';
+import { useState } from 'react';
+import { useMediaQuery } from '@joisse1101/ui-library';
+import { SyncModal } from '@/components/SyncModal';
 export function MainLayout() {
     const { token, status, isLoading, login, logout } = useGitHubAuth();
-    const { handleSave, handleLoad, handleSync } = useGistSync(token || '');
+    const { handleSave, handleLoad, getSyncStatus } = useGistSync(token || '');
+    const [syncStatus, setSyncedStatus] = useState<'local' | 'remote' | 'synced'>('synced');
+    const [isSyncModalOpen, setIsSyncModalOpen] = useState<boolean>(false);
 
     const handleAuthAction = () => {
         if (status === 'logged-in') {
@@ -13,6 +18,13 @@ export function MainLayout() {
             login();
         }
     }
+
+    const handleOpenSyncModal = async () => {
+        setSyncedStatus(await getSyncStatus());
+        setIsSyncModalOpen(true);
+    };
+
+    const isPhone = !useMediaQuery(600);
 
     return (
         <div className="layout">
@@ -24,6 +36,7 @@ export function MainLayout() {
                 </button>
                 {status === 'logged-in' &&
                     <>
+                    {!isPhone && <>
                         <button className="btn btn-icon" onClick={handleSave} title="Upload to Gist">
                             <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
                                 <path d="M14 10v2.5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 12.5V10"></path>
@@ -38,7 +51,8 @@ export function MainLayout() {
                                 <line x1="8" y1="10" x2="8" y2="2"></line>
                             </svg>
                         </button>
-                        <button className="btn btn-icon" onClick={handleSync} title="Sync State with Gist">
+                    </>}
+                    <button className="btn btn-icon" onClick={handleOpenSyncModal} title="Sync State with Gist">
                         <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                             <path d="M3 12a9 9 0 0 1 15-6.7L21 8" />
                             <path d="M21 3v5h-5" />
@@ -54,6 +68,13 @@ export function MainLayout() {
             </main>
 
             <Footer />
+            <SyncModal
+                isOpen={isSyncModalOpen}
+                onClose={() => setIsSyncModalOpen(false)}
+                handleLoad={handleLoad}
+                handleSave={handleSave}
+                syncStatus={syncStatus}
+            />
         </div>
     );
 }
