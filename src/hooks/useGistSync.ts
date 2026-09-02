@@ -1,5 +1,5 @@
 import { GistSyncService } from '@/services/gistService';
-import { useState, useCallback } from 'react';
+import { useCallback } from 'react';
 import { db, type ToolInstance } from '@/db/db';
 import { toast } from 'sonner';
 
