@@ -43,19 +43,6 @@ export default function GrannySquare() {
     const [selectedColour, setSelectedColour] = useState<string | null>(null);
     const [hoveredColour, setHoveredColour] = useState<string | null>(null);
 
-    const setActiveAndScrollToTab = (tab: string) => {
-        setActiveTab(tab);
-        requestAnimationFrame(() => {
-            setTimeout(() => {
-                const tabsElement = document.querySelector<HTMLElement>('.tabs-header');
-                if (tabsElement) {
-                    tabsElement.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                }
-            }, 1500);
-        });
-    }
-
-
     useEffect(() => {
         window.addLogs = (log: string[]) => {
             const newLogs = Array.from(log);
@@ -82,17 +69,19 @@ export default function GrannySquare() {
         };
     }, []);
 
+    const hasGridData = grannyGridState.colourGrid.length > 0 && grannyGridState.patternGrid.length > 0;
+
     useEffect(() => {
         if (!isLoading) {
-            if (grannyGridState.colourGrid.length === 0 || grannyGridState.patternGrid.length === 0) {
+            if (!hasGridData) {
                 setIsOutputDisabled(true);
-                setActiveAndScrollToTab('logs-tab');
+                setActiveTab('logs-tab');
             } else {
                 setIsOutputDisabled(false);
-                setActiveAndScrollToTab('output-tab');
+                setActiveTab('output-tab');
             }
         }
-    }, [grannyGridState, isLoading]);
+    }, [hasGridData, isLoading]);
 
     const activeHighlight = hoveredColour ?? selectedColour;
 
@@ -153,7 +142,7 @@ export default function GrannySquare() {
                             filledCells={filledCells}
                             setFilledCells={setFilledCells}
                             gridSize={parseInt(gridSize, 10)}
-                            maxInput={parseInt(numPatterns, 10) - 1}
+                            maxInput={parseInt(numPatterns, 10)}
                             lockedCells={lockedCells}
                             handleClearGrid={handleClearGrid}
                             handleFillCell={handleFillCell}
@@ -194,7 +183,7 @@ export default function GrannySquare() {
                 setFilledCells={setFilledCells}
                 isLoading={isLoading}
                 setGenerationLogs={setGenerationLogs}
-                setActiveTab={setActiveAndScrollToTab}
+                setActiveTab={setActiveTab}
                 setIsOutputDisabled={setIsOutputDisabled}
                 setGrannyGridState={setGrannyGridState}
                 lockFilledCells={lockFilledCells}

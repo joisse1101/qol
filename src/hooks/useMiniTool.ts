@@ -3,7 +3,6 @@ import { db } from '@/db/db';
 
 // Hook for fetching all instance IDs belonging to a mini-tool
 export const useMiniToolInstanceIds = (toolName: string) => {
-    // Query all records matching the toolName index
     const records = useLiveQuery(
         () => db.tools.where('toolName').equals(toolName).toArray(),
         [toolName]
@@ -55,12 +54,22 @@ export const useMiniTool = (toolName: string, instanceId: string = 'default') =>
 
     const record = useLiveQuery(() => db.tools.get(id), [id]);
 
-    const setToolData = async (updatedData: any) => {
-        await db.tools.put({
-            id: `${toolName}:${instanceId}`,
-            toolName,
-            data: updatedData,
-            updatedAt: new Date().toISOString(), // MUST update this field whenever data changes
+    // Supports passing either an object OR a updater function: setToolData((prev) => ({ ...prev, key: val }))
+    const setToolData = async (updatedDataOrFn: any) => {
+        await db.transaction('rw', db.tools, async () => {
+            const currentRecord = await db.tools.get(id);
+            const prevData = currentRecord?.data || {};
+
+            const nextData = typeof updatedDataOrFn === 'function'
+                ? updatedDataOrFn(prevData)
+                : updatedDataOrFn;
+
+            await db.tools.put({
+                id,
+                toolName,
+                data: nextData,
+                updatedAt: new Date().toISOString(),
+            });
         });
     };
 

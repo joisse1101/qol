@@ -8,7 +8,7 @@ export type CellColour = string | [string, string];
 
 export interface InputGridProps {
     filledCells: Record<string, string>;
-    setFilledCells: React.Dispatch<React.SetStateAction<Record<string, string>>>;
+    setFilledCells: (updates: Record<string, string>) => void;
     gridSize: number;
     maxInput: number;
     lockedCells: Record<string, boolean>;
@@ -50,6 +50,8 @@ export const InputGrid: React.FC<InputGridProps> = ({ filledCells, gridSize, max
 
     const isGridEmpty = Object.keys(filledCells).length === 0;
     const isPhone = !useMediaQuery(600);
+
+    console.log(maxInput)
 
     return (
         <>
