@@ -24,6 +24,8 @@
     "@pyscript/core": "^0.7.31",
     "@zip.js/zip.js": "^2.8.53",
     "codemirror": "^6.0.2",
+    "dexie": "^4.4.5",
+    "dexie-react-hooks": "^4.4.0",
     "gray-matter": "^4.0.3",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",

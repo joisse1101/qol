@@ -1,20 +1,43 @@
 import { GistSyncService } from '@/services/gistService';
 import { useState } from 'react';
-import { useAppState } from '@/context/AppContext';
+import { db, type ToolInstance } from '@/db/db';
+
+export type FlatGistPayload = {
+    version: number;
+    updatedAt: string;
+    tools: ToolInstance[];
+};
 
 export const useGistSync = (token: string) => {
-    // const [isConnected, setIsConnected] = useState<boolean>(false);
     const [syncStatus, setSyncStatus] = useState<string>('');
 
-    const { appState, setAppState } = useAppState();
+    // Export Dexie table directly as a flat array
+    const exportDbState = async (): Promise<FlatGistPayload> => {
+        const records = await db.tools.toArray();
+        return {
+            version: 1,
+            updatedAt: new Date().toISOString(),
+            tools: records,
+        };
+    };
 
-    // Sync Data to Gist
+    // Import flat array directly into Dexie
+    const importDbState = async (remoteData: FlatGistPayload) => {
+        if (!Array.isArray(remoteData?.tools)) return;
+
+        await db.transaction('rw', db.tools, async () => {
+            await db.tools.clear();
+            await db.tools.bulkPut(remoteData.tools);
+        });
+    };
+
     const handleSave = async () => {
         if (!token) return;
         setSyncStatus('Saving to GitHub Gist...');
         try {
+            const payload = await exportDbState();
             const service = new GistSyncService(token);
-            await service.saveData(appState);
+            await service.saveData(payload);
             setSyncStatus('Saved successfully!');
         } catch (err) {
             setSyncStatus('Save failed.');
@@ -22,14 +45,14 @@ export const useGistSync = (token: string) => {
         }
     };
 
-    // Load Data from Gist
     const handleLoad = async () => {
+        if (!token) return;
         setSyncStatus('Loading from GitHub Gist...');
         try {
             const service = new GistSyncService(token);
             const data = await service.loadData();
-            if (data && typeof data === 'object') {
-                setAppState(data);
+            if (data?.tools && Array.isArray(data.tools)) {
+                await importDbState(data);
                 setSyncStatus('Loaded successfully!');
             } else {
                 setSyncStatus('No saved data found.');
@@ -40,18 +63,5 @@ export const useGistSync = (token: string) => {
         }
     };
 
-    const handleSync = async () => {
-        const service = new GistSyncService(token);
-        const data = await service.loadData();
-
-        if (!data || data?.version < appState.version) {
-            await handleSave();
-            setSyncStatus('Local state saved to Gist.');
-        } else if (data && data?.version > appState.version) {
-            setAppState(data);
-            setSyncStatus('Local state updated from Gist.');
-        }
-    };
-
-    return { syncStatus, handleSave, handleLoad, handleSync };
+    return { syncStatus, handleSave, handleLoad };
 };

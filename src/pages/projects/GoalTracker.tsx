@@ -3,54 +3,61 @@ import { useEffect, useState } from "react";
 import { TrackerTab } from "@/components/partials/goalTracker/TrackerTab";
 import { generateUUID } from '@/utils/numbers';
 import { DeleteGoalModal } from "@/components/partials/goalTracker/DeleteGoalModal";
-import { useMiniTool } from "@/context/AppContext";
+import { useMiniTool, useMiniToolInstanceIds } from "@/hooks/useMiniTool";
 
 export default function GoalTracker() {
-    const { toolData, setToolData } = useMiniTool('goalTracker');
-    const tabIds = Object.keys(toolData || {});
-    const [activeTab, setActiveTab] = useState<string>(tabIds[0]);
+    const { instanceIds, createInstance, deleteInstance, isLoading } = useMiniToolInstanceIds('goalTracker');
+    const [activeTab, setActiveTab] = useState<string>('');
     const [isDeleteModalOpen, setIsDeleteModalOpen] = useState<boolean>(false);
 
-    const tabItems: TabItem[] = tabIds.map((id) => ({
-        id: id,
-        label: toolData[id]?.trackerState?.goalTitle || 'Your Goal',
-        content: <TrackerTab id={id} />,
-    }));
-
-    function handleAddTab() {
-        const newId = generateUUID();
-        setToolData({
-            ...toolData,
-            [newId]: {},
-        });
-        setActiveTab(newId);
-    }
-
+    // Synchronize activeTab when instanceIds load or change
     useEffect(() => {
-        if (tabIds.length === 0) {
-            handleAddTab();
+        if (isLoading) return;
+
+        if (instanceIds.length === 0) {
+            // Seeding default tab if none exist
+            const newId = generateUUID();
+            createInstance(newId, {});
+            setActiveTab(newId);
+        } else if (!activeTab || !instanceIds.includes(activeTab)) {
+            setActiveTab(instanceIds[0]);
         }
-        if (!tabIds.includes(activeTab)) {
-            setActiveTab(tabIds[0]);
+    }, [instanceIds, isLoading, activeTab]);
+
+    const handleAddTab = async () => {
+        const newId = generateUUID();
+        await createInstance(newId, {});
+        setActiveTab(newId);
+    };
+
+    const handleDeleteTab = async (tabId: string) => {
+        if (instanceIds.length <= 1) {
+            alert("You cannot delete the last remaining tab.");
+            return;
         }
-    }, [tabIds]);
+        await deleteInstance(tabId);
+
+        const nextInstanceIds = instanceIds.filter((id) => id !== tabId);
+        if (activeTab === tabId) {
+            setActiveTab(nextInstanceIds[0]);
+        }
+    };
 
     function triggerDeleteModal(tabId: string) {
         setActiveTab(tabId);
         setIsDeleteModalOpen(true);
     }
 
-    function handleDeleteTab(tabId: string) {
-        if (tabIds.length === 1) {
-            alert("You cannot delete the last remaining tab.");
-            return;
-        }
-        const newTabIds = tabIds.filter(id => id !== tabId);
-        setToolData(Object.fromEntries(newTabIds.map(id => [id, toolData[id]])));
-        if (activeTab === tabId) {
-            setActiveTab(newTabIds[0]);
-        }
+    if (isLoading || !activeTab) {
+        return null; // Prevent UI rendering until IndexedDB query finishes
     }
+
+    const tabItems: TabItem[] = instanceIds.map((id) => ({
+        id: id,
+        label: <TrackerTabLabel id={id} />,
+        content: <TrackerTab id={id} />,
+    }));
+
     return (
         <div className="app-wrapper">
             <Tabs
@@ -58,7 +65,7 @@ export default function GoalTracker() {
                 activeId={activeTab}
                 onTabChange={(tabId) => setActiveTab(tabId)}
                 onTabAdd={handleAddTab}
-                onTabDelete={tabIds.length > 1 ? triggerDeleteModal : undefined}
+                onTabDelete={instanceIds.length > 1 ? triggerDeleteModal : undefined}
             />
             <DeleteGoalModal
                 isOpen={isDeleteModalOpen}
@@ -69,5 +76,10 @@ export default function GoalTracker() {
                 }}
             />
         </div>
-    )
+    );
+}
+
+const TrackerTabLabel = ({ id }: { id: string }) => {
+    const { toolData } = useMiniTool('goalTracker', id);
+    return <span>{toolData.trackerState?.goalTitle || `Your Goal`}</span>;
 };

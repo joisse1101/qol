@@ -1,8 +1,18 @@
 import { Octokit } from '@octokit/rest';
-import { AppStateSchema, type AppState } from '@/types/AppState';
+import { z } from 'zod';
+import { ToolInstanceSchema } from '@/db/db';
 import { toast } from 'sonner';
+
 const FILE_NAME = 'qol_data.json';
 const GIST_DESCRIPTION = 'QoL App Data Gist';
+
+export const FlatGistPayloadSchema = z.object({
+    version: z.number(),
+    updatedAt: z.string(),
+    tools: z.array(ToolInstanceSchema),
+});
+
+export type FlatGistPayload = z.infer<typeof FlatGistPayloadSchema>;
 
 export class GistSyncService {
     private octokit: Octokit;
@@ -12,8 +22,7 @@ export class GistSyncService {
     }
 
     /**
-     * Checks if the provided GitHub token is valid by attempting to fetch the authenticated user's information.
-     * @returns boolean indicating whether the token is valid (true) or not (false).
+     * Checks if the GitHub token is valid.
      */
     async verifyToken(): Promise<boolean> {
         try {
@@ -25,20 +34,19 @@ export class GistSyncService {
     }
 
     /**
-     * Helper function to locate the Gist ID based on the description. If found, returns the Gist ID; otherwise, returns null.
-     * @returns string | null - The Gist ID if found, or null if not found.
+     * Locates the Gist ID based on the matching description.
      */
     private async findGistId(): Promise<string | null> {
-        const { data: gists } = await this.octokit.rest.gists.list();
+        // Set per_page: 100 to reduce chances of missing the gist due to pagination
+        const { data: gists } = await this.octokit.rest.gists.list({ per_page: 100 });
         const appGist = gists.find((g) => g.description === GIST_DESCRIPTION);
         return appGist ? appGist.id : null;
     }
 
     /**
-     * Loads data from the Gist. If the Gist exists and contains the expected file, it returns the parsed JSON data; otherwise, it returns null.
-     * @returns Promise<T | null> - The parsed data from the Gist if available, or null if not found.
+     * Loads and parses data from the Gist using FlatGistPayloadSchema.
      */
-    async loadData(): Promise<AppState | null> {
+    async loadData(): Promise<FlatGistPayload | null> {
         const gistId = await this.findGistId();
         if (!gistId) return null;
 
@@ -48,36 +56,35 @@ export class GistSyncService {
 
         try {
             const rawJson = JSON.parse(file.content);
-            const appState = AppStateSchema.parse(rawJson);
+
+            // Validates against flat Dexie payload schema
+            const validatedPayload = FlatGistPayloadSchema.parse(rawJson);
             toast.success('Data loaded successfully from GitHub Gist!');
-            return appState;
+            return validatedPayload;
         } catch (e) {
             console.error('Error parsing Gist data:', e);
             console.log('Raw Gist content:', file.content);
-            toast.error('Something went wrong while loading data from GitHub Gist.');
+            toast.error('Failed to parse data from GitHub Gist.');
             return null;
         }
     }
 
     /**
-     * Saves the provided data to the Gist. If the Gist already exists, it updates the existing file; otherwise, it creates a new private Gist with the data.
-     * @param data - The data object to be saved to the Gist.
+     * Saves flat database records payload to the Gist.
      */
-    async saveData(data: object): Promise<void> {
+    async saveData(data: FlatGistPayload): Promise<void> {
         const gistId = await this.findGistId();
         const content = JSON.stringify(data, null, 2);
 
         if (gistId) {
-            // Update existing Gist
             await this.octokit.rest.gists.update({
                 gist_id: gistId,
                 files: { [FILE_NAME]: { content } },
             });
         } else {
-            // Create new private Gist
             await this.octokit.rest.gists.create({
                 description: GIST_DESCRIPTION,
-                public: false, // Private Gist
+                public: false,
                 files: { [FILE_NAME]: { content } },
             });
         }
