@@ -19,7 +19,6 @@ export const useGistSync = (token: string) => {
         const exportableTools: ToolInstance[] = [];
 
         records.forEach((record) => {
-            console.log('Processing record:', record, record.updatedAt);
             if (record.updatedAt) {
                 const recTime = new Date(record.updatedAt).getTime();
                 if (recTime > latestTime) {
@@ -54,9 +53,6 @@ export const useGistSync = (token: string) => {
         const localTime = new Date(localData.updatedAt).getTime();
         const remoteTime = new Date(remoteData.updatedAt).getTime();
 
-        console.log(remoteData);
-
-        console.log(remoteTime, localTime);
         if (localTime > remoteTime) return 'local';
         if (localTime < remoteTime) return 'remote';
         return 'synced';

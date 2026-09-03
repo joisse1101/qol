@@ -61,7 +61,6 @@ export class GistSyncService {
             return validatedPayload;
         } catch (e) {
             console.error('Error parsing Gist data:', e);
-            console.log('Raw Gist content:', file.content);
             return null;
         }
     }

@@ -1,5 +1,5 @@
 import { clampValue } from '@/utils/numbers';
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useMediaQuery } from '@joisse1101/ui-library';
 import { useMiniTool } from './useMiniTool';
 
@@ -43,12 +43,6 @@ export const useGrannySquare = (instanceId = 'default') => {
         },
         [setToolData]
     );
-
-    useEffect(() => {
-        if (!isLoading) {
-            console.log('Tool data updated:', toolData);
-        }
-    }, [toolData, isLoading]);
 
     const patternsNum = parseInt(numPatterns, 10) || 6;
 
