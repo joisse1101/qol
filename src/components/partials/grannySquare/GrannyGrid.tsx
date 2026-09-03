@@ -1,4 +1,4 @@
-import React, { useEffect, useState, memo, useMemo } from 'react';
+import React, { useState, memo } from 'react';
 
 interface CustomCSSProperties extends React.CSSProperties {
     [key: `--${string}`]: string | number;
