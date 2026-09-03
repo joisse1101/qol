@@ -1,5 +1,6 @@
 import { clampValue } from '@/utils/numbers';
 import { useEffect, useCallback } from 'react';
+import { useMediaQuery } from '@joisse1101/ui-library';
 import { useMiniTool } from './useMiniTool';
 
 export type GrannyGridState = {
@@ -51,6 +52,7 @@ export const useGrannySquare = (instanceId = 'default') => {
 
     const patternsNum = parseInt(numPatterns, 10) || 6;
 
+    const isPhone = !useMediaQuery(600);
     const handleCellLockToggle = (cellKey: string) => {
         const [rowIndex, colIndex] = cellKey.split('-').map((index) => parseInt(index, 10));
         const cellValue = grannyGridState.patternGrid[rowIndex]?.[colIndex];
@@ -60,7 +62,10 @@ export const useGrannySquare = (instanceId = 'default') => {
         const nextFilled = { ...filledCells };
 
         if (!isLocked && cellValue !== undefined) {
-            nextFilled[cellKey] = cellValue;
+            nextFilled[cellKey] = cellValue; // fill input grid cell with cell value
+        }
+        if (isLocked && isPhone) {
+            delete nextFilled[cellKey]; // clear grid cell if unlocked and on phone
         }
 
         updateGrannyGridToolState({
