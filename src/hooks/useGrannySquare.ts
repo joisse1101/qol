@@ -1,9 +1,13 @@
 import { clampValue } from '@/utils/numbers';
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
+import { useMediaQuery } from '@joisse1101/ui-library';
 import { useMiniTool } from './useMiniTool';
+import type { PaletteItem } from '@joisse1101/ui-library';
 
 export type GrannyGridState = {
     gridSize: number;
+    numPatterns: string;
+    colourPickerState: PaletteItem[];
     colourGrid: string[][];
     patternGrid: string[][];
     palette: string[];
@@ -14,13 +18,19 @@ export type GrannyGridToolState = {
     lockedCells: Record<string, boolean>;
     filledCells: Record<string, string>;
     gridSize: string;
-    numPatterns: string;
 };
 
 const defaultGrannyGridState: GrannyGridState = {
-    gridSize: 0,
+    gridSize: 18,
+    numPatterns: '6',
     colourGrid: [],
     patternGrid: [],
+    colourPickerState: [
+        { id: 1, hex: '#f2f3f5', stepsToNext: 5 },
+        { id: 2, hex: '#9c8b7a', stepsToNext: 5 },
+        { id: 3, hex: '#4bbed8', stepsToNext: 5 },
+        { id: 4, hex: '#343648', stepsToNext: 0 },
+    ],
     palette: [],
 };
 
@@ -32,6 +42,7 @@ export const useGrannySquare = (instanceId = 'default') => {
     const filledCells: Record<string, string> = toolData?.filledCells ?? {};
     const gridSize: string = toolData?.gridSize ?? '18';
     const numPatterns: string = toolData?.numPatterns ?? '6';
+    const colourPickerState: PaletteItem[] = toolData?.grannyGridState?.colourPickerState ?? defaultGrannyGridState.colourPickerState;
 
     const updateGrannyGridToolState = useCallback(
         (updates: Partial<GrannyGridToolState>) => {
@@ -43,14 +54,9 @@ export const useGrannySquare = (instanceId = 'default') => {
         [setToolData]
     );
 
-    useEffect(() => {
-        if (!isLoading) {
-            console.log('Tool data updated:', toolData);
-        }
-    }, [toolData, isLoading]);
-
     const patternsNum = parseInt(numPatterns, 10) || 6;
 
+    const isPhone = !useMediaQuery(600);
     const handleCellLockToggle = (cellKey: string) => {
         const [rowIndex, colIndex] = cellKey.split('-').map((index) => parseInt(index, 10));
         const cellValue = grannyGridState.patternGrid[rowIndex]?.[colIndex];
@@ -60,7 +66,10 @@ export const useGrannySquare = (instanceId = 'default') => {
         const nextFilled = { ...filledCells };
 
         if (!isLocked && cellValue !== undefined) {
-            nextFilled[cellKey] = cellValue;
+            nextFilled[cellKey] = cellValue; // fill input grid cell with cell value
+        }
+        if (isLocked && isPhone) {
+            delete nextFilled[cellKey]; // clear grid cell if unlocked and on phone
         }
 
         updateGrannyGridToolState({
@@ -130,6 +139,8 @@ export const useGrannySquare = (instanceId = 'default') => {
                 colourGrid: updates.colourGrid ?? currentGrannyState.colourGrid ?? [],
                 patternGrid: updates.patternGrid ?? currentGrannyState.patternGrid ?? [],
                 palette: updates.palette ?? currentGrannyState.palette ?? [],
+                numPatterns: updates.numPatterns ?? currentGrannyState.numPatterns ?? '6',
+                colourPickerState: updates.colourPickerState ?? currentGrannyState.colourPickerState ?? [],
             };
 
             return {
@@ -148,7 +159,11 @@ export const useGrannySquare = (instanceId = 'default') => {
     };
 
     const setNumPatterns = (updates: string) => {
-        updateGrannyGridToolState({ numPatterns: updates });
+        setGrannyGridState({ numPatterns: updates });
+    };
+
+    const setColourPickerState = (updates: PaletteItem[]) => {
+        setGrannyGridState({ colourPickerState: updates });
     };
 
     return {
@@ -162,6 +177,8 @@ export const useGrannySquare = (instanceId = 'default') => {
         setGridSize,
         numPatterns,
         setNumPatterns,
+        colourPickerState,
+        setColourPickerState,
         handleCellLockToggle,
         lockFilledCells,
         handleClearGrid,

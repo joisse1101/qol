@@ -1,4 +1,5 @@
 import { ColourPalettePicker } from "@joisse1101/ui-library";
+import type { PaletteItem } from "@joisse1101/ui-library";
 import { DOWNLOAD_INPUT_TOOLTIP, UPLOAD_INPUT_TOOLTIP } from "@/constants/grannySquareTooltips";
 import { showUploadDownloadToast } from "@/constants/toastConstants";
 import { useMediaQuery } from "@joisse1101/ui-library";
@@ -13,6 +14,8 @@ export interface ControlPanelProps {
     setNumPatterns: (num: string) => void;
     filledCells: Record<string, string>;
     setFilledCells: (filledCells: Record<string, string>) => void;
+    colourPickerState: PaletteItem[];
+    setColourPickerState: (newState: PaletteItem[]) => void;
     isLoading: boolean;
     setGenerationLogs: (logs: string[]) => void;
     setActiveTab: (tab: string) => void;
@@ -36,6 +39,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
     setIsOutputDisabled,
     setGrannyGridState,
     lockFilledCells,
+    colourPickerState,
+    setColourPickerState,
 }) => {
     const isDesktop = useMediaQuery(600);
     const maxGridSize = isDesktop ? 24 : 18; // Limit grid size for mobile devices
@@ -106,6 +111,8 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                     colourGrid: result.colourGrid,
                     patternGrid: result.patternGrid,
                     palette: colors,
+                    colourPickerState: colourPickerState,
+                    numPatterns: numPatterns,
                 });
 
                 lockFilledCells();
@@ -137,7 +144,10 @@ export const ControlPanel: React.FC<ControlPanelProps> = ({
                 </div>
                 <details id="colour-picker-details" className={`color-picker-accordion ${isLoading ? 'disabled' : ''}`}>
                     <summary className={`accordion-header ${isLoading ? 'disabled' : ''}`}>Colour Settings / Palette</summary>
-                    <ColourPalettePicker onChange={(newPalette: string[]) => setColors(newPalette)} />
+                    <ColourPalettePicker palette={{
+                        state: colourPickerState,
+                        setState: setColourPickerState,
+                    }} onChange={(newPalette: string[]) => setColors(newPalette)} />
                 </details>
                 {errors.length > 0 && (
                     <div className="error-messages">
