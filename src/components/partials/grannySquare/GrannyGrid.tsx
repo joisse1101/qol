@@ -1,4 +1,4 @@
-import React, { useEffect, useState, memo } from 'react';
+import React, { useEffect, useState, memo, useMemo } from 'react';
 
 interface CustomCSSProperties extends React.CSSProperties {
     [key: `--${string}`]: string | number;
@@ -24,14 +24,18 @@ export const GrannyGrid: React.FC<GrannyGridProps> = ({
     handleCellLockToggle,
 }) => {
     const [animatedCells, setAnimatedCells] = useState<Record<string, boolean>>({});
+    const [colourGridState, setColourGridState] = useState<CellColour[][]>(colourGrid); 
 
     const handleAnimationEnd = (cellKey: string) => {
         setAnimatedCells((prev) => ({ ...prev, [cellKey]: true }));
     };
 
     useEffect(() => {
-        setAnimatedCells({});
-    }, [colourGrid, patternGrid, gridSize]);
+        if (JSON.stringify(colourGrid) !== JSON.stringify(colourGridState)) {
+            setAnimatedCells({});
+            setColourGridState(colourGrid);
+        }
+    }, [colourGrid]);
 
     return (
         <>
@@ -40,7 +44,7 @@ export const GrannyGrid: React.FC<GrannyGridProps> = ({
                 className={`granny-grid ${highlightedColour ? 'has-highlight' : ''}`}
                 style={{ '--grid-size': gridSize } as React.CSSProperties}
             >
-                {colourGrid.map((row, rowIdx) =>
+                {colourGridState.map((row, rowIdx) =>
                     row.map((colourList, colIdx) => {
                         const cellKey = `${rowIdx}-${colIdx}`;
                         const pattern = patternGrid[rowIdx]?.[colIdx] ?? '';
