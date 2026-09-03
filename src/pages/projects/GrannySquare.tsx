@@ -36,6 +36,8 @@ export default function GrannySquare() {
         handleClearFilled,
         handleClearLockedCells,
         handleRemoveLocks,
+        colourPickerState,
+        setColourPickerState,
     } = useGrannySquare();
 
     const [activeTab, setActiveTab] = useState<string>('logs-tab');
@@ -108,7 +110,7 @@ export default function GrannySquare() {
                 <div className="output-flex-wrapper">
                     <div id="grid-container">
                         <GrannyGrid
-                            key={JSON.stringify(grannyGridState)} // Force re-render when state changes
+                            key={`${JSON.stringify(grannyGridState.colourGrid)}${JSON.stringify(grannyGridState.patternGrid)}`} // Force re-render when state changes
                             gridSize={grannyGridState.gridSize}
                             colourGrid={grannyGridState.colourGrid}
                             patternGrid={grannyGridState.patternGrid}
@@ -187,6 +189,8 @@ export default function GrannySquare() {
                 setIsOutputDisabled={setIsOutputDisabled}
                 setGrannyGridState={setGrannyGridState}
                 lockFilledCells={lockFilledCells}
+                colourPickerState={colourPickerState}
+                setColourPickerState={setColourPickerState}
             />
 
             <Tabs tabs={tabItems} activeId={activeTab} onTabChange={(tabId) => setActiveTab(tabId)} />

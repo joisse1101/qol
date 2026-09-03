@@ -24,18 +24,10 @@ export const GrannyGrid: React.FC<GrannyGridProps> = ({
     handleCellLockToggle,
 }) => {
     const [animatedCells, setAnimatedCells] = useState<Record<string, boolean>>({});
-    const [colourGridState, setColourGridState] = useState<CellColour[][]>(colourGrid); 
 
     const handleAnimationEnd = (cellKey: string) => {
         setAnimatedCells((prev) => ({ ...prev, [cellKey]: true }));
     };
-
-    useEffect(() => {
-        if (JSON.stringify(colourGrid) !== JSON.stringify(colourGridState)) {
-            setAnimatedCells({});
-            setColourGridState(colourGrid);
-        }
-    }, [colourGrid]);
 
     return (
         <>
@@ -44,7 +36,7 @@ export const GrannyGrid: React.FC<GrannyGridProps> = ({
                 className={`granny-grid ${highlightedColour ? 'has-highlight' : ''}`}
                 style={{ '--grid-size': gridSize } as React.CSSProperties}
             >
-                {colourGridState.map((row, rowIdx) =>
+                {colourGrid.map((row, rowIdx) =>
                     row.map((colourList, colIdx) => {
                         const cellKey = `${rowIdx}-${colIdx}`;
                         const pattern = patternGrid[rowIdx]?.[colIdx] ?? '';
