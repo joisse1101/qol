@@ -28,7 +28,11 @@ export function MainLayout() {
 
     return (
         <div className="layout">
-            <Header links={[{ label: 'Granny Square', href: '/qol/granny-square' }, { label: 'Goal Tracker', href: '/qol/goal-tracker' }]} >
+            <Header links={[
+                { label: 'Goal Tracker', href: '/qol/goal-tracker' },
+                { label: 'The Log', href: '/qol/the-log' },
+                { label: 'Granny Square', href: '/qol/granny-square' },
+            ]} >
                 <button className={`btn btn-icon ${status === 'logged-in' ? 'btn-success' : 'btn-danger'}`} onClick={handleAuthAction} disabled={isLoading}>
                     <svg viewBox="0 0 16 15" width="16" height="15" fill="currentColor" xmlns="http://w3.org">
                         <path d="M7 1h2v7H7V1zm3.8 2.2l1.4-1.4A7 7 0 1 1 2.8 1.8l1.4 1.4A5 5 0 1 0 10.8 3.2z" />

@@ -7,6 +7,7 @@ import { MainLayout } from '@/layouts/MainLayout';
 import Home from './pages/Home';
 import GrannySquare from './pages/projects/GrannySquare';
 import GoalTracker from './pages/projects/GoalTracker';
+import TheLog from './pages/projects/TheLog';
 import { Toaster } from 'sonner';
 
 export default function App() {
@@ -18,8 +19,9 @@ export default function App() {
         <Route path="/qol" element={<MainLayout />}>
           {/* <Route path="about" element={<About />} /> */}
           <Route path="" element={<Home />} />
-          <Route path="granny-square" element={<GrannySquare />} />
           <Route path="goal-tracker" element={<GoalTracker />} />
+          <Route path="the-log" element={<TheLog />} />
+          <Route path="granny-square" element={<GrannySquare />} />
         </Route>
       </Routes>
     </BrowserRouter>
