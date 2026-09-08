@@ -43,19 +43,24 @@ export const useGistSync = (token: string) => {
     }, []);
 
     // Check if local data is strictly newer than Gist remote data
-    const getSyncStatus = useCallback(async (): Promise<'local' | 'remote' |'synced'> => {
-        if (!token) return 'local';
-        const remoteData = await new GistSyncService(token).loadData();
-        if (!remoteData || !remoteData.updatedAt) return 'local';
+    const getSyncStatus = useCallback(async (): Promise<'local' | 'remote' | 'synced'> => {
+        try {
+            if (!token) return 'local';
+            const remoteData = await new GistSyncService(token).loadData();
+            if (!remoteData || !remoteData.updatedAt) return 'local';
 
-        const localData = await exportDbState();
+            const localData = await exportDbState();
 
-        const localTime = new Date(localData.updatedAt).getTime();
-        const remoteTime = new Date(remoteData.updatedAt).getTime();
+            const localTime = new Date(localData.updatedAt).getTime();
+            const remoteTime = new Date(remoteData.updatedAt).getTime();
 
-        if (localTime > remoteTime) return 'local';
-        if (localTime < remoteTime) return 'remote';
-        return 'synced';
+            if (localTime > remoteTime) return 'local';
+            if (localTime < remoteTime) return 'remote';
+            return 'synced';
+        } catch (error) {
+            toast.error('Failed to determine sync status.');
+            return 'local';
+        }
     }, [token, exportDbState]);
 
     // Import payload directly into Dexie
