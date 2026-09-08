@@ -1,6 +1,6 @@
 import { GistSyncService } from '@/services/gistService';
 import { useCallback } from 'react';
-import { db, type ToolInstance } from '@/db/db';
+import { db, type ToolInstance } from '@/db/appDb';
 import { toast } from 'sonner';
 
 export type FlatGistPayload = {

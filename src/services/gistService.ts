@@ -1,6 +1,6 @@
 import { Octokit } from '@octokit/rest';
 import { z } from 'zod';
-import { ToolInstanceSchema } from '@/db/db';
+import { ToolInstanceSchema } from '@/db/appDb';
 
 const FILE_NAME = 'qol_data.json';
 const GIST_DESCRIPTION = 'QoL App Data Gist';

@@ -90,3 +90,7 @@ export function parseDate(val: any, fallback: Date): Date {
   const d = new Date(val);
   return isNaN(d.getTime()) ? fallback : d;
 }
+
+export function getDisplayDate(date: Date): string {
+  return new Intl.DateTimeFormat(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }).format(date).replace(',', ',\n');
+}

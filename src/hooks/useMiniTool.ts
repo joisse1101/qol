@@ -1,5 +1,5 @@
 import { useLiveQuery } from 'dexie-react-hooks';
-import { db } from '@/db/db';
+import { db } from '@/db/appDb';
 
 // Hook for fetching all instance IDs belonging to a mini-tool
 export const useMiniToolInstanceIds = (toolName: string) => {
