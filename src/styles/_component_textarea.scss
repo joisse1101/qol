@@ -3,6 +3,7 @@
 .textarea-wrapper {
   position: relative;
   display: inline-block;
+  align-items: end;
   width: 100%;
 }
 
@@ -21,6 +22,10 @@
   color: $text-dim;
   pointer-events: none; /* Allows clicking "through" the text into the textarea */
   user-select: none;
+
+  @media (max-width: 600px) {
+    pointer-events: auto;
+  }
 }
 
 .textarea-hint kbd {

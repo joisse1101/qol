@@ -3,9 +3,10 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { toast } from 'sonner'
 
 export const useLogs = () => {
-    const logs = useLiveQuery(() => logDb.logEntries.toArray(), [], []) ?? [];
+    const logs = useLiveQuery(
+        () => logDb.logEntries.orderBy('createdAt').reverse().toArray(), [], []) ?? [];
 
-    const addLog = async (content: string, type: string = 'default') => {
+    const addLog = async (content: string) => {
         if (!content.trim()) return;
 
         const log: LogEntry = {
@@ -13,7 +14,6 @@ export const useLogs = () => {
             content,
             createdAt: new Date().toISOString(),
             updatedAt: new Date().toISOString(),
-            type,
         };
 
         try {
@@ -23,7 +23,7 @@ export const useLogs = () => {
         }
     };
 
-    const updateLog = async (id: string, partialLog: Partial<Omit<LogEntry, 'id' | 'createdAt'>>) => {
+    const updateLog = async (id: string, partialLog: Partial<Omit<LogEntry, 'id' | 'createdAt' | 'updatedAt'>>) => {
         try {
             await logDb.logEntries.update(id, {
                 ...partialLog,

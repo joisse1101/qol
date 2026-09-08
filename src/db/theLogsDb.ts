@@ -6,7 +6,6 @@ export const LogEntrySchema = z.object({
     content: z.string(),
     createdAt: z.string(),
     updatedAt: z.string(),
-    type: z.string(),
 });
 
 export type LogEntry = z.infer<typeof LogEntrySchema>;

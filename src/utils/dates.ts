@@ -92,5 +92,16 @@ export function parseDate(val: any, fallback: Date): Date {
 }
 
 export function getDisplayDate(date: Date): string {
-  return new Intl.DateTimeFormat(undefined, { weekday: 'long', year: 'numeric', month: 'short', day: 'numeric', hour: 'numeric', minute: 'numeric', second: 'numeric' }).format(date).replace(',', ',\n');
+  const formattedDate = new Intl.DateTimeFormat(undefined, {
+    weekday: 'long',
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: 'numeric',
+    second: 'numeric',
+    hour12: true,
+  }).format(date);
+
+  return formattedDate.replaceAll(',', ',\n')
 }
