@@ -30,7 +30,7 @@ const LogEntryComponent = ({ log, isEdit, onRemove, onUpdate }: {
     log: LogEntry;
     isEdit: boolean;
     onRemove: (id: string) => void;
-    onUpdate: (id: string, partialLog: Partial<Omit<LogEntry, 'id' | 'createdAt'>>) => void
+    onUpdate: (id: string, partialLog: Partial<Omit<LogEntry, 'id' | 'createdAt' | 'updatedAt'>>) => void
 }) => {
     return (
         <div className="log-entry">

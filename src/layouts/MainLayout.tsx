@@ -31,6 +31,7 @@ export function MainLayout() {
             <Header links={[
                 { label: 'Goal Tracker', href: '/qol/goal-tracker' },
                 { label: 'The Log', href: '/qol/the-log' },
+                { label: 'The Board', href: '/qol/the-board' },
                 { label: 'Granny Square', href: '/qol/granny-square' },
             ]} >
                 <button className={`btn btn-icon ${status === 'logged-in' ? 'btn-success' : 'btn-danger'}`} onClick={handleAuthAction} disabled={isLoading}>

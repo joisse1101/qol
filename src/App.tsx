@@ -8,6 +8,7 @@ import Home from './pages/Home';
 import GrannySquare from './pages/projects/GrannySquare';
 import GoalTracker from './pages/projects/GoalTracker';
 import TheLog from './pages/projects/TheLog';
+import TheBoard from './pages/projects/TheBoard';
 import { Toaster } from 'sonner';
 
 export default function App() {
@@ -21,6 +22,7 @@ export default function App() {
           <Route path="" element={<Home />} />
           <Route path="goal-tracker" element={<GoalTracker />} />
           <Route path="the-log" element={<TheLog />} />
+          <Route path="the-board" element={<TheBoard />} />
           <Route path="granny-square" element={<GrannySquare />} />
         </Route>
       </Routes>
