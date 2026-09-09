@@ -1,35 +1,54 @@
 // hooks/useBoards.ts
 import { useLiveQuery } from 'dexie-react-hooks';
-import { logDb, BoardSchema, type Ticket, type Board } from '@/db/theLogsDb';
+import { logDb, BoardSchema, type Ticket, type Board, type BoardState } from '@/db/theLogsDb';
 import { useEffect } from 'react';
 
 export function useBoards() {
-    const boards = useLiveQuery(() => logDb.boards.toArray());
+    const boards = useLiveQuery(() => logDb.boards.orderBy('position').toArray());
 
-    const addBoard = async (customName = 'My New Board') => {
+    const addBoard = async (newBoard: Partial<BoardState>) => {
+        let customName = newBoard.name ?? 'New Board';
+        if (await logDb.boards.where('name').equals(customName).first() !== undefined) {
+            customName += `-${crypto.randomUUID().slice(0, 4)}`;
+        };
         const count = await logDb.boards.count();
 
-        const newBoard: Board = BoardSchema.parse({
+        const boardToAdd: Board = BoardSchema.parse({
             name: customName,
-            columns: ['TODO', 'In Progress', 'Done'],
+            columns: newBoard.columns ?? ['TODO', 'In Progress', 'Done'],
             position: count,
         });
 
-        await logDb.boards.add(newBoard);
-        return newBoard;
+        await logDb.boards.add(boardToAdd);
+        return boardToAdd;
     };
+
+    const updateBoard = async (boardId: string, updates: Partial<BoardState>) => {
+        const board = await logDb.boards.get(boardId);
+        if (!board) return null;
+        const updatedBoard = { ...board, ...updates };
+        await logDb.boards.put(updatedBoard);
+        return updatedBoard;
+    };
+
+    const removeBoard = async (boardId: string) => {
+        await logDb.boardTickets.where('boardId').equals(boardId).delete();
+        await logDb.boards.delete(boardId);
+    }
 
     // Seed the database automatically if empty
     useEffect(() => {
         if (boards !== undefined && boards.length === 0) {
-            addBoard('Default Board');
+            addBoard({ name: 'Default Board' });
         }
     }, [boards]);
 
     return {
         boards: boards ?? [],
         isLoading: boards === undefined,
-        addBoard
+        addBoard,
+        updateBoard,
+        removeBoard,
     };
 }
 export function useBoardData(boardId: string) {

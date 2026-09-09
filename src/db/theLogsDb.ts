@@ -30,12 +30,15 @@ export const BoardSchema = z.object({
     name: z.string(),
     columns: z.array(z.string()).default(['TODO', 'In Progress', 'Done']),
     position: z.number().default(0),
+    startDate: z.iso.datetime().default(() => new Date().toISOString()),
+    endDate: z.optional(z.iso.datetime()),
     createdAt: z.iso.datetime().default(() => new Date().toISOString()),
     updatedAt: z.iso.datetime().default(() => new Date().toISOString()),
 });
 
 export type Board = z.infer<typeof BoardSchema>;
 export type CreateBoard = z.input<typeof BoardSchema>;
+export type BoardState = Omit<Board, 'id' | 'createdAt' | 'updatedAt'>;
 
 export type BoardTicket = z.infer<typeof BoardTicketSchema>;
 export type CreateBoardTicket = z.input<typeof BoardTicketSchema>;
@@ -56,7 +59,7 @@ export class LogDatabase extends Dexie {
         super('LogDatabase');
         this.version(1).stores({
             logEntries: 'id, createdAt, updatedAt, ticketId',
-            boards: 'id, createdAt, updatedAt',
+            boards: 'id, name, position, startDate, endDate, createdAt, updatedAt',
             boardTickets: 'id, boardId, ticketId, columnName, position, assignedAt',
             tickets: 'id, title, createdAt, updatedAt',
         });
