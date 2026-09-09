@@ -1,14 +1,12 @@
 // hooks/useBoards.ts
 import { useLiveQuery } from 'dexie-react-hooks';
 import { logDb, BoardSchema, type Ticket, type Board } from '@/db/theLogsDb';
+import { useEffect } from 'react';
 
 export function useBoards() {
-    const boardIds = useLiveQuery(async () => {
-        const boards = await logDb.boards.toArray();
-        return boards.map((b) => b.id);
-    }, []);
-    
-    const addDefaultBoard = async (customName = 'My New Board') => {
+    const boards = useLiveQuery(() => logDb.boards.toArray());
+
+    const addBoard = async (customName = 'My New Board') => {
         const count = await logDb.boards.count();
 
         const newBoard: Board = BoardSchema.parse({
@@ -17,13 +15,23 @@ export function useBoards() {
             position: count,
         });
 
-        await logDb.boards.put(newBoard);
+        await logDb.boards.add(newBoard);
         return newBoard;
     };
 
-    return {boardIds, addDefaultBoard};
-}
+    // Seed the database automatically if empty
+    useEffect(() => {
+        if (boards !== undefined && boards.length === 0) {
+            addBoard('Default Board');
+        }
+    }, [boards]);
 
+    return {
+        boards: boards ?? [],
+        isLoading: boards === undefined,
+        addBoard
+    };
+}
 export function useBoardData(boardId: string) {
     // 1. Live Query (Pure Read)
     const data = useLiveQuery(
