@@ -1,0 +1,25 @@
+.board-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.board-container {
+    display: flex;
+    gap: 16px;
+    overflow-y: auto;
+}
+
+.board-meta {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 0.5rem;
+
+    &-name {
+        min-width: fit-content;
+    }
+    &-select {
+        width: 300px;
+    }
+}

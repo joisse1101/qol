@@ -30,46 +30,51 @@ export default function TheBoard() {
     }
 
     return (
-        <>
-            <div>
-                <h1>{board.name}</h1>
-                <InlineSelect
-                    label="Project Board:"
-                    options={boards?.map(b => ({ value: b.id, label: b.name })) ?? []}
-                    value={selectedBoardId}
-                    onChange={(value) => setUserSelectedBoardId(value)}
-                />
-                <Button onClick={() => setIsAddBoardModalOpen(true)}
-                    variant="primary"
-                    icon={true}>
-                    ✚
-                </Button>
-                <Button
-                    onClick={() => setIsConfigureModalOpen(true)}
-                    variant="secondary"
-                    icon={true}
-                >
-                    🛠
-                </Button>
-                <Button
-                    onClick={() => removeBoard(board.id)}
-                    variant="danger"
-                    icon={true}
-                >
-                    ✕
-                </Button>
-                <div className="board-container">
-                    {Object.entries(ticketsByColumn).map(([columnName, tickets]) => (
-                        <div className="card" key={columnName}>
-                            <h2>{columnName}</h2>
-                            <ul>
-                                {tickets.map((ticket) => (
-                                    <li key={ticket.id}>{ticket.title}</li>
-                                ))}
-                            </ul>
-                        </div>
-                    ))}
+        <div className="board-wrapper">
+            <div className="board-meta">
+                <div className="board-meta-name">
+                    <h3>{board.name}</h3>
+                    <Button onClick={() => setIsAddBoardModalOpen(true)}
+                        variant="primary"
+                        icon={true}>
+                        ✚
+                    </Button>
+                    <Button
+                        onClick={() => setIsConfigureModalOpen(true)}
+                        variant="secondary"
+                        icon={true}
+                    >
+                        🛠
+                    </Button>
+                    <Button
+                        onClick={() => removeBoard(board.id)}
+                        variant="danger"
+                        icon={true}
+                    >
+                        ✕
+                    </Button>
                 </div>
+                <div className="board-meta-select">
+
+                    <InlineSelect
+                        label="Project Board:"
+                        options={boards?.map(b => ({ value: b.id, label: b.name })) ?? []}
+                        value={selectedBoardId}
+                        onChange={(value) => setUserSelectedBoardId(value)}
+                    />
+                </div>
+            </div>
+            <div className="board-container">
+                {Object.entries(ticketsByColumn).map(([columnName, tickets]) => (
+                    <div className="card" key={columnName}>
+                        <h4>{columnName}</h4>
+                        <ul>
+                            {tickets.map((ticket) => (
+                                <li key={ticket.id}>{ticket.title}</li>
+                            ))}
+                        </ul>
+                    </div>
+                ))}
             </div>
             <ConfigureBoardModal
                 key={isAddBoardModalOpen ? 'add' : 'configure'}
@@ -80,6 +85,6 @@ export default function TheBoard() {
                 }}
                 board={isAddBoardModalOpen ? undefined : board}
             />
-        </>
+        </div   >
     );
 }
