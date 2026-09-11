@@ -1,10 +1,29 @@
 import { logDb, type LogEntry, LogEntrySchema } from '@/db/theLogsDb';
 import { useLiveQuery } from 'dexie-react-hooks';
+import { useMemo } from 'react';
 import { toast } from 'sonner'
 
 export const useLogs = () => {
-    const logs = useLiveQuery(
+    const rawLogs = useLiveQuery(
         () => logDb.logEntries.orderBy('createdAt').reverse().toArray(), [], []) ?? [];
+    
+    const logs = useMemo(() => {
+        let lastSeenDateString = '';
+
+        return rawLogs.map((log) => {
+            const logDateString = new Date(log.createdAt).toISOString().split('T')[0];
+            const isLastOfDay = logDateString !== lastSeenDateString;
+
+            if (isLastOfDay) {
+                lastSeenDateString = logDateString;
+            }
+
+            return {
+                ...log,
+                isLastOfDay,
+            };
+        });
+    }, [rawLogs]);
 
     const addLog = async (content: string) => {
         if (!content.trim()) return;

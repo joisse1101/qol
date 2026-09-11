@@ -97,11 +97,18 @@ export function getDisplayDate(date: Date): string {
     year: 'numeric',
     month: 'short',
     day: 'numeric',
+  }).format(date);
+
+  return formattedDate
+}
+
+export function getDisplayTime(date: Date): string {
+  const formattedTime = new Intl.DateTimeFormat(undefined, {
     hour: 'numeric',
     minute: 'numeric',
     second: 'numeric',
     hour12: true,
   }).format(date);
 
-  return formattedDate.replaceAll(',', ',\n')
+  return formattedTime;
 }
