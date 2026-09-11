@@ -1,7 +1,42 @@
 // hooks/useBoards.ts
 import { useLiveQuery } from 'dexie-react-hooks';
-import { logDb, BoardSchema, type Ticket, type Board, type BoardState } from '@/db/theLogsDb';
-import { useEffect } from 'react';
+import { logDb, BoardSchema, type Ticket, type Board, type BoardState, TicketSchema, BoardTicketSchema } from '@/db/theLogsDb';
+
+export function useColumns(boardId: string, columnId: string) {
+    const tickets = useLiveQuery(
+        async () => {
+            const boardTickets = await logDb.boardTickets
+                .where('boardId')
+                .equals(boardId)
+                .and(bt => bt.columnName === columnId)
+                .toArray();
+
+            const tickets = await logDb.tickets.bulkGet(boardTickets.map((bt) => bt.ticketId));
+            return tickets.flatMap((t) => (t ? [t] : []));
+        },
+        [boardId, columnId],
+        []
+    );
+
+    const addTicket = async () => {
+        const ticketId = await logDb.tickets.add(TicketSchema.parse({ title: "New Ticket" }))
+        const count = await logDb.boardTickets
+            .where('boardId')
+            .equals(boardId)
+            .and(bt => bt.columnName === columnId)
+            .count();
+        await logDb.boardTickets.add(BoardTicketSchema.parse({
+            boardId,
+            columnName: columnId,
+            ticketId,
+            position: count + 1,
+        }));
+    };
+
+
+
+    return { addTicket, tickets };
+}
 
 export function useBoards() {
     const boards = useLiveQuery(() => logDb.boards.orderBy('position').toArray());
@@ -34,14 +69,13 @@ export function useBoards() {
     const removeBoard = async (boardId: string) => {
         await logDb.boardTickets.where('boardId').equals(boardId).delete();
         await logDb.boards.delete(boardId);
-    }
 
-    // Seed the database automatically if empty
-    useEffect(() => {
-        if (boards !== undefined && boards.length === 0) {
-            addBoard({ name: 'Default Board' });
+        const boardCount = await logDb.boards.count()
+
+        if (boardCount === 0) {
+            await addBoard({ name: 'Default Board' });
         }
-    }, [boards]);
+    };
 
     return {
         boards: boards ?? [],
@@ -85,7 +119,7 @@ export function useBoardData(boardId: string) {
         undefined // undefined = loading, null = not found
     );
 
-   
+
 
     return {
         board: data?.board ?? null,

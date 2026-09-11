@@ -1,13 +1,35 @@
+@use "@joisse1101/ui-library/styles/_variables.scss" as *;
+
 .board-wrapper {
     display: flex;
     flex-direction: column;
     gap: 1rem;
 }
 
-.board-container {
+.column-container {
     display: flex;
     gap: 16px;
     overflow-y: auto;
+
+    .column {
+        border-left: 1px solid $border-color;
+        padding: 1rem;
+        min-width: 350px;
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+
+            font-size: $font-sm;
+            font-weight: 600;
+            color: $text-muted
+        }
+    }
+    .column:first-child { 
+        border-left: none;  
+    }
+
 }
 
 .board-meta {
@@ -22,4 +44,11 @@
     &-select {
         width: 300px;
     }
+
+    .date {
+        color: $text-muted;
+        font-weight: 500;
+        font-size: $font-sm;
+    }
 }
+

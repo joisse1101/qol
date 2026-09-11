@@ -67,3 +67,17 @@ export class LogDatabase extends Dexie {
 }
 
 export const logDb = new LogDatabase();
+
+const defaultBoard = BoardSchema.parse({
+    id: crypto.randomUUID(),
+    name: 'Default Board',
+    columns: ['TODO', 'In Progress', 'Done'],
+    position: 0,
+});
+
+logDb.on('ready', async () => {
+    const count = await logDb.boards.count();
+    if (count === 0) {
+        await logDb.boards.add(defaultBoard);
+    }
+})
