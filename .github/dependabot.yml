@@ -1,0 +1,31 @@
+version: 2
+
+# @joisse1101/ui-library lives on GitHub Packages; READ_PACKAGES_TOKEN is a Dependabot secret
+# (classic PAT with read:packages) set with `gh secret set READ_PACKAGES_TOKEN --app dependabot`.
+registries:
+  github-packages:
+    type: npm-registry
+    url: https://npm.pkg.github.com
+    token: ${{ secrets.READ_PACKAGES_TOKEN }}
+
+updates:
+  - package-ecosystem: "npm"
+    directory: "/"
+    registries: ["github-packages"]
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    groups:
+      # ui-library bumps get their own PR so they are easy to spot and test.
+      ui-library:
+        patterns: ["@joisse1101/ui-library"]
+      # One PR for all other minor/patch bumps; majors still arrive one per package.
+      minor-and-patch:
+        exclude-patterns: ["@joisse1101/ui-library"]
+        update-types: ["minor", "patch"]
+
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
